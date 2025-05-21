@@ -1,0 +1,18 @@
+<!--
+    This is the default policy that does nothing more than to greet you. There are no backend API calls here.
+-->
+<policies>
+    <inbound>
+        <base />
+        <return-response>
+            <set-status code="200" reason="OK" />
+            <set-body>Hello World from API Management!</set-body>
+        </return-response>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+</policies>

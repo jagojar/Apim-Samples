@@ -1,0 +1,5 @@
+# This is a comprehensive requirements.txt file to ensure that one installation covers everything.
+
+requests
+setuptools
+pytest

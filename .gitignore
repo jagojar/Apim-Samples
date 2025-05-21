@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Azure
+.azure/
+
+# Bicep/ARM/Infra
+params*.json
+policy-updated.xml
+labs-in-progress/
+
+# Misc
+*.log
+
+# Exclude sensitive or generated files
+.env
