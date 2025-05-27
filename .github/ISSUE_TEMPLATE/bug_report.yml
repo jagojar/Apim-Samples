@@ -66,12 +66,9 @@ body:
     id: cpu_other
     attributes:
       label: "Other CPU Architecture"
-      description: "If you selected 'Other' above, please specify your CPU architecture."
-      placeholder: ""
+      description: "If you selected 'Other' above, please specify your CPU architecture. Otherwise, leave blank."
     validations:
       required: false
-    if:
-      cpu: "Other"
 
   - type: dropdown
     id: os
@@ -90,9 +87,6 @@ body:
     id: os_other
     attributes:
       label: "Other Operating System"
-      description: "If you selected 'Other' above, please specify your OS."
-      placeholder: ""
+      description: "If you selected 'Other' above, please specify your OS. Otherwise, leave blank."
     validations:
       required: false
-    if:
-      os: "Other"
