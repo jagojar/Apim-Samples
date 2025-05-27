@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **If you suspect you may have found a security vulnerability, please do not report it publicly. Instead, [please report it privately](https://github.com/Azure-Samples/Apim-Samples/security/advisories/new).**
+        **If you suspect you may have found a security vulnerability, [please report it privately](https://github.com/Azure-Samples/Apim-Samples/security/advisories/new).**
 
   - type: textarea
     id: bug
@@ -49,20 +49,16 @@ body:
     validations:
       required: false
 
-  - type: checkboxes
+  - type: dropdown
     id: cpu
     attributes:
       label: "CPU Architecture"
-      description: "Select your CPU architecture (select one only). If 'Other', please specify."
+      description: "Select your CPU architecture."
       options:
-        - label: "x86"
-          required: false
-        - label: "x64"
-          required: false
-        - label: "ARM64"
-          required: false
-        - label: "Other (please specify below)"
-          required: false
+        - "x86"
+        - "x64"
+        - "ARM64"
+        - "Other"
     validations:
       required: false
 
@@ -71,24 +67,22 @@ body:
     attributes:
       label: "Other CPU Architecture"
       description: "If you selected 'Other' above, please specify your CPU architecture."
-      placeholder: "e.g. RISC-V, PowerPC, etc."
+      placeholder: ""
     validations:
       required: false
+    if:
+      cpu: "Other"
 
-  - type: checkboxes
+  - type: dropdown
     id: os
     attributes:
       label: "Operating System"
-      description: "Select your operating system (select one only). If 'Other', please specify."
+      description: "Select your operating system."
       options:
-        - label: "Windows"
-          required: false
-        - label: "Linux"
-          required: false
-        - label: "macOS"
-          required: false
-        - label: "Other (please specify below)"
-          required: false
+        - "Windows"
+        - "Linux"
+        - "macOS"
+        - "Other"
     validations:
       required: false
 
@@ -97,6 +91,8 @@ body:
     attributes:
       label: "Other Operating System"
       description: "If you selected 'Other' above, please specify your OS."
-      placeholder: "e.g. FreeBSD, Solaris, etc."
+      placeholder: ""
     validations:
       required: false
+    if:
+      os: "Other"
