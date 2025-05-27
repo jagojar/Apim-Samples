@@ -2,7 +2,9 @@
 
 [![Python Tests](https://github.com/Azure-Samples/Apim-Samples/actions/workflows/python-tests.yml/badge.svg?branch=main)](https://github.com/Azure-Samples/Apim-Samples/actions/workflows/python-tests.yml)
 
-This repository provides a playground to safely experiment with and learn Azure API Management (APIM) policies in various architectures. 
+This repository provides a playground to safely experiment with and learn Azure API Management (APIM) policies in various architectures.  
+
+_If you are interested in APIM & Azure OpenAI integrations, please check out the excellent [AI Gateway](https://github.com/Azure-Samples/AI-Gateway) GitHub repository._
 
 ## Objectives
 
