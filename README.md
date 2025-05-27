@@ -76,9 +76,9 @@ The first time you run a Jupyter notebook, you'll be asked to install the Jupyte
 ### List of Samples
 
 | Sample Name | Description | Supported Infrastructure(s) |
-|------------------|-----------------------------------------------------------------------------|--------------------------------------------|
-| [General](./samples/general) | Basic demonstration of APIM sample setup and policy usage. | All infrastructures |
-| [Load Balancing](./samples/load-balancing) | Example of APIM policy-based load balancing across backends. | apim-aca, afd-apim (with ACA) |
+|:-----------------|:----------------------------------------------------------------------------|:-------------------------------------------|
+| [General](./samples/general/create.ipynb) | Basic demo of APIM sample setup and policy usage. | All infrastructures |
+| [Load Balancing](./samples/load-balancing/create.ipynb) | Priority and weighted load balancing across backends. | apim-aca, afd-apim (with ACA) |
 
 ### Running a Sample
 
