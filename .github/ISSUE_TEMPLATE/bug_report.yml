@@ -1,7 +1,7 @@
 name: "Bug report"
 description: "Create a report to help us improve."
 title: "[Bug] <enter brief description>"
-labels: [triage]
+labels: [triage, "Type: Bug"]
 assignees: [simonkurtz-MSFT]
 
 body:

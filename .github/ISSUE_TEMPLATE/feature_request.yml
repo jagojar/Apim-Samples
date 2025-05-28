@@ -1,7 +1,7 @@
 name: "Feature Request"
 description: "Suggest a new feature or improvement."
 title: "[Feature] <enter brief description>"
-labels: [triage, feature-request]
+labels: [triage, "Type: Feature"]
 assignees: [simonkurtz-MSFT]
 
 body:
