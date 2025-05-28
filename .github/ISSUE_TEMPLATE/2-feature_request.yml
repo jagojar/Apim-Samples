@@ -1,9 +1,12 @@
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+
 name: "Feature Request"
 description: "Suggest a new feature or improvement."
 title: "[Feature] <enter brief description>"
-labels: [triage, "Type: Feature"]
-assignees: [simonkurtz-MSFT]
-
+labels: ["triage"]
+type: "Feature"
+assignees:
+  - simonkurtz-MSFT
 body:
   - type: markdown
     attributes:

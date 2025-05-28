@@ -1,9 +1,12 @@
-name: "Bug report"
-description: "Create a report to help us improve."
-title: "[Bug] <enter brief description>"
-labels: [triage, "Type: Bug"]
-assignees: [simonkurtz-MSFT]
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
 
+name: "Bug report"
+description: "Create a bug report to help us improve.""
+title: "[Bug]: <title>"
+labels: ["triage"]
+type: "Bug"
+assignees: 
+  - simonkurtz-MSFT
 body:
   - type: markdown
     attributes:
