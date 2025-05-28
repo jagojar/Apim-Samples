@@ -117,6 +117,73 @@ class Output(object):
 #    PRIVATE METHODS
 # ------------------------------
 
+def _cleanup_resources(deployment_name: str, rg_name: str) -> None:
+    """
+    Clean up resources associated with a deployment in a resource group.
+    Deletes and purges Cognitive Services, API Management, and Key Vault resources, then deletes the resource group itself.
+
+    Args:
+        deployment_name (str): The deployment name (string).
+        rg_name (str): The resource group name.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: If an error occurs during cleanup.
+    """
+    if not deployment_name:
+        print_error("Missing deployment name parameter.")
+        return
+
+    if not rg_name:
+        print_error("Missing resource group name parameter.")
+        return
+
+    try:
+        print_info(f"🧹 Cleaning up resource group '{rg_name}'...")
+
+        # Show the deployment details
+        output = run(f"az deployment group show --name {deployment_name} -g {rg_name} -o json", "Deployment retrieved", "Failed to retrieve the deployment")
+
+        if output.success and output.json_data:
+            provisioning_state = output.json_data.get("properties").get("provisioningState")
+            print_info(f"Deployment provisioning state: {provisioning_state}")
+
+            # Delete and purge CognitiveService accounts
+            output = run(f" az cognitiveservices account list -g {rg_name}", f"Listed CognitiveService accounts", f"Failed to list CognitiveService accounts")
+            if output.success and output.json_data:
+                for resource in output.json_data:
+                    print_info(f"Deleting and purging Cognitive Service Account '{resource['name']}' in resource group '{rg_name}'...")
+                    output = run(f"az cognitiveservices account delete -g {rg_name} -n {resource['name']}", f"Cognitive Services '{resource['name']}' deleted", f"Failed to delete Cognitive Services '{resource['name']}'")
+                    output = run(f"az cognitiveservices account purge -g {rg_name} -n {resource['name']} -l \"{resource['location']}\"", f"Cognitive Services '{resource['name']}' purged", f"Failed to purge Cognitive Services '{resource['name']}'")
+
+            # Delete and purge APIM resources
+            output = run(f" az apim list -g {rg_name}", f"Listed APIM resources", f"Failed to list APIM resources")
+            if output.success and output.json_data:
+                for resource in output.json_data:
+                    print_info(f"Deleting and purging API Management '{resource['name']}' in resource group '{rg_name}'...")
+                    output = run(f"az apim delete -n {resource['name']} -g {rg_name} -y", f"API Management '{resource['name']}' deleted", f"Failed to delete API Management '{resource['name']}'")
+                    output = run(f"az apim deletedservice purge --service-name {resource['name']} --location \"{resource['location']}\"", f"API Management '{resource['name']}' purged", f"Failed to purge API Management '{resource['name']}'")
+
+            # Delete and purge Key Vault resources
+            output = run(f" az keyvault list -g {rg_name}", f"Listed Key Vault resources", f"Failed to list Key Vault resources")
+            if output.success and output.json_data:
+                for resource in output.json_data:
+                    print_info(f"Deleting and purging Key Vault '{resource['name']}' in resource group '{rg_name}'...")
+                    output = run(f"az keyvault delete -n {resource['name']} -g {rg_name}", f"Key Vault '{resource['name']}' deleted", f"Failed to delete Key Vault '{resource['name']}'")
+                    output = run(f"az keyvault purge -n {resource['name']} --location \"{resource['location']}\"", f"Key Vault '{resource['name']}' purged", f"Failed to purge Key Vault '{resource['name']}'")
+
+            # Delete the resource group last
+            print_message(f"🧹 Deleting resource group '{rg_name}'...")
+            output = run(f"az group delete --name {rg_name} -y", f"Resource group '{rg_name}' deleted", f"Failed to delete resource group '{rg_name}'")
+
+            print_message("🧹 Cleanup completed.")
+
+    except Exception as e:
+        print(f"An error occurred during cleanup: {e}")
+        traceback.print_exc()
+
 def _print_log(message: str, prefix: str = '', color: str = '', output: str = '', duration: str = '', show_time: bool = False, blank_above: bool = False, blank_below: bool = False) -> None:
     """
     Print a formatted log message with optional prefix, color, output, duration, and time.
@@ -162,12 +229,6 @@ print_message   = lambda msg, output = '', duration = '', blank_above = False   
 print_ok        = lambda msg, output = '', duration = '', blank_above = True    : _print_log(msg, '✅ ', BOLD_G, output, duration, True, blank_above)
 print_warning   = lambda msg, output = '', duration = ''                        : _print_log(msg, '⚠️ ', BOLD_Y, output, duration, True)
 print_val       = lambda name, value, val_below = False                         : _print_log(f"{name:<25}:{'\n' if val_below else ' '}{value}", '👉🏽 ', BOLD_B)
-
-# Validation functions will raise ValueError if the value is not valid
-
-validate_http_verb      = lambda val: HTTP_VERB(val)
-validate_infrastructure = lambda val: INFRASTRUCTURE(val)
-validate_sku            = lambda val: APIM_SKU(val)
 
 def create_bicep_deployment_group(rg_name: str, rg_location: str, deployment: str | INFRASTRUCTURE, bicep_parameters: dict, bicep_parameters_file: str = 'params.json') -> Output:
     """
@@ -279,78 +340,6 @@ def read_policy_xml(policy_xml_filepath: str) -> str:
 
     return policy_template_xml
 
-def _cleanup_resources(deployment_name: str, rg_name: str) -> None:
-    """
-    Clean up resources associated with a deployment in a resource group.
-    Deletes and purges Cognitive Services, API Management, and Key Vault resources, then deletes the resource group itself.
-
-    Args:
-        deployment_name (str): The deployment name (string).
-        rg_name (str): The resource group name.
-
-    Returns:
-        None
-
-    Raises:
-        Exception: If an error occurs during cleanup.
-    """
-    if not deployment_name:
-        print_error("Missing deployment name parameter.")
-        return
-
-    if not rg_name:
-        print_error("Missing resource group name parameter.")
-        return
-
-    try:
-        print_info(f"🧹 Cleaning up resource group '{rg_name}'...")
-
-        # Show the deployment details
-        output = run(f"az deployment group show --name {deployment_name} -g {rg_name} -o json", "Deployment retrieved", "Failed to retrieve the deployment")
-
-        if output.success and output.json_data:
-            provisioning_state = output.json_data.get("properties").get("provisioningState")
-            print_info(f"Deployment provisioning state: {provisioning_state}")
-
-            # Delete and purge CognitiveService accounts
-            output = run(f" az cognitiveservices account list -g {rg_name}", f"Listed CognitiveService accounts", f"Failed to list CognitiveService accounts")
-            if output.success and output.json_data:
-                for resource in output.json_data:
-                    print_info(f"Deleting and purging Cognitive Service Account '{resource['name']}' in resource group '{rg_name}'...")
-                    output = run(f"az cognitiveservices account delete -g {rg_name} -n {resource['name']}", f"Cognitive Services '{resource['name']}' deleted", f"Failed to delete Cognitive Services '{resource['name']}'")
-                    output = run(f"az cognitiveservices account purge -g {rg_name} -n {resource['name']} -l \"{resource['location']}\"", f"Cognitive Services '{resource['name']}' purged", f"Failed to purge Cognitive Services '{resource['name']}'")
-
-            # Delete and purge APIM resources
-            output = run(f" az apim list -g {rg_name}", f"Listed APIM resources", f"Failed to list APIM resources")
-            if output.success and output.json_data:
-                for resource in output.json_data:
-                    print_info(f"Deleting and purging API Management '{resource['name']}' in resource group '{rg_name}'...")
-                    output = run(f"az apim delete -n {resource['name']} -g {rg_name} -y", f"API Management '{resource['name']}' deleted", f"Failed to delete API Management '{resource['name']}'")
-                    output = run(f"az apim deletedservice purge --service-name {resource['name']} --location \"{resource['location']}\"", f"API Management '{resource['name']}' purged", f"Failed to purge API Management '{resource['name']}'")
-
-            # Delete and purge Key Vault resources
-            output = run(f" az keyvault list -g {rg_name}", f"Listed Key Vault resources", f"Failed to list Key Vault resources")
-            if output.success and output.json_data:
-                for resource in output.json_data:
-                    print_info(f"Deleting and purging Key Vault '{resource['name']}' in resource group '{rg_name}'...")
-                    output = run(f"az keyvault delete -n {resource['name']} -g {rg_name}", f"Key Vault '{resource['name']}' deleted", f"Failed to delete Key Vault '{resource['name']}'")
-                    output = run(f"az keyvault purge -n {resource['name']} --location \"{resource['location']}\"", f"Key Vault '{resource['name']}' purged", f"Failed to purge Key Vault '{resource['name']}'")
-
-            # Delete the resource group last
-            print_message(f"🧹 Deleting resource group '{rg_name}'...")
-            output = run(f"az group delete --name {rg_name} -y", f"Resource group '{rg_name}' deleted", f"Failed to delete resource group '{rg_name}'")
-
-            print_message("🧹 Cleanup completed.")
-
-    except Exception as e:
-        print(f"An error occurred during cleanup: {e}")
-        traceback.print_exc()
-
-
-# ------------------------------
-#    PUBLIC METHODS
-# ------------------------------
-
 def cleanup_infra_deployments(deployment: INFRASTRUCTURE, indexes: int | list[int] | None = None) -> None:
     """
     Clean up infrastructure deployments by deployment enum and index/indexes.
@@ -360,7 +349,6 @@ def cleanup_infra_deployments(deployment: INFRASTRUCTURE, indexes: int | list[in
         deployment (INFRASTRUCTURE): The infrastructure deployment enum value.
         indexes (int | list[int] | None): A single index, a list of indexes, or None for no index.
     """
-    validate_infrastructure(deployment)
 
     if indexes is None:
         indexes_list = [None]
@@ -545,8 +533,6 @@ def get_infra_rg_name(deployment_name: INFRASTRUCTURE, index: int | None = None)
         str: The generated resource group name.
     """
 
-    validate_infrastructure(deployment_name)
-
     rg_name = f"apim-infra-{deployment_name.value}"
 
     if index is not None:
@@ -638,3 +624,23 @@ def run(command: str, ok_message: str = '', error_message: str = '', print_outpu
             print_message(ok_message if success else error_message, output_text if not success or print_output else "", f"[{int(minutes)}m:{int(seconds)}s]")
 
     return Output(success, output_text)
+
+# Validation functions will raise ValueError if the value is not valid
+
+validate_http_verb      = lambda val: HTTP_VERB(val)
+validate_sku            = lambda val: APIM_SKU(val)
+
+def validate_infrastructure(infra: INFRASTRUCTURE, supported_infras: list[INFRASTRUCTURE]) -> None:
+    """
+    Validate that the provided infrastructure is a supported infrastructure.
+
+    Args:
+        infra (INFRASTRUCTURE): The infrastructure deployment enum value.
+        supported_infras (list[INFRASTRUCTURE]): List of supported infrastructures.
+
+    Raises:
+        ValueError: If the infrastructure is not supported.
+    """
+
+    if infra not in supported_infras:
+        raise ValueError(f"Unsupported infrastructure: {infra}. Supported infrastructures are: {', '.join([i.value for i in supported_infras])}")
