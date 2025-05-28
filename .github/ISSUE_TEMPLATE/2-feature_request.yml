@@ -2,7 +2,7 @@
 
 name: "Feature Request"
 description: "Suggest a new feature or improvement."
-title: "[Feature] <enter brief description>"
+title: "[Feature]: <title>"
 labels: ["triage"]
 type: "Feature"
 assignees:
