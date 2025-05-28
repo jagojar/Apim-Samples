@@ -14,38 +14,6 @@ _If you are interested in APIM & Azure OpenAI integrations, please check out the
 
 _Try it out, learn from it, apply it in your setups._
 
-## Repo Structure
-
-### High-level 
-
-- All _samples_ can be found in the `samples` folder. Samples showcase functionality and provide a baseline for your experimentation.
-- All _infrastructures_ can be found in the `infrastructure` folder. They provide the architectural underpinnings.
-- All shared code, modules, functionality, policies, etc. can be found in the `shared` folder. 
-  - Bicep _modules_ are versioned in the `bicep/modules` folder. Major changes require versioning.
-  - Python _modules_ are found in the `python` folder. _They are not versioned yet but may be in the future._ 
-  - Reusable _APIM policies_ are found in the `apim-policies` folder. 
-  - Reusable Jupyter notebooks are found in the `jupyter` folder.
-
-### Sample Setup
-
-- Each sample uses an architecture infrastructure. This keeps the samples free of almost all setup.
-- Each infrastructure and sample features a `create.ipynb` for creation (and running) of the sample setup and a `main.bicep` file for IaC configuration.
-- Each infrastructure contains a `clean-up.ipynb` file to tear down everything in the infrastructure and its resource group. This reduces your Azure cost.
-- Samples (and infrastructures) may contain additional files specific to their use cases.
-
-### Infrastructure Architectures
-
-We provide several common architectural approaches to integrating APIM into your Azure ecosystem. While these are high-fidelity setups, they are not production-ready. Please refer to the [Azure API Management landing zone accelerator](https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/app-platform/api-management/landing-zone-accelerator) for up-to-date production setups.
-
-- [Simple API Management](./infrastructure/simple-apim) (simple-apim)
-  - Just the basics with a publicly accessible API Management intance fronting your APIs. This is the innermost way to experience and experiment with the APIM policies.
-
-- [API Management & Container Apps](./infrastructure/apim-aca) (apim-aca)
-  - APIs are often times implemented in containers that are running in Azure Container Apps. This architecture accesses the container apps publicly. It's beneficial to test both APIM and container app URLs here to contrast and compare experiences of API calls through and bypassing APIM. It is not intended to be a security baseline.
-
-- [Secure Front Door & API Management & Container Apps](./infrastructure/afd-apim) (afd-apim)
-  - A higher-fidelity implementation of a secured setup in which Azure Front Door connects to APIM via the new private link integration. This traffic, once it traverses through Front Door, rides entirely on Microsoft-owned and operated networks. Similarly, the connection from APIM to Container Apps is secured but through a VNet configuration (it is also entirely possible to do this via private link). It's noteworthy that we are using APIM Standard V2 here as we need the ability to accept a private link from Front Door.
-
 ---
 
 ## Getting Started
@@ -90,6 +58,50 @@ The first time you run a Jupyter notebook, you'll be asked to install the Jupyte
 
 Now that infrastructure and sample have been stood up, you can experiment with the policies, make requests against APIM, etc.
 
+---
+
+## Repo Structure
+
+### High-level 
+
+- All _samples_ can be found in the `samples` folder. Samples showcase functionality and provide a baseline for your experimentation.
+- All _infrastructures_ can be found in the `infrastructure` folder. They provide the architectural underpinnings.
+- All shared code, modules, functionality, policies, etc. can be found in the `shared` folder. 
+  - Bicep _modules_ are versioned in the `bicep/modules` folder. Major changes require versioning.
+  - Python _modules_ are found in the `python` folder. _They are not versioned yet but may be in the future._ 
+  - Reusable _APIM policies_ are found in the `apim-policies` folder. 
+  - Reusable Jupyter notebooks are found in the `jupyter` folder.
+
+### Sample Setup
+
+- Each sample uses an architecture infrastructure. This keeps the samples free of almost all setup.
+- Each infrastructure and sample features a `create.ipynb` for creation (and running) of the sample setup and a `main.bicep` file for IaC configuration.
+- Each infrastructure contains a `clean-up.ipynb` file to tear down everything in the infrastructure and its resource group. This reduces your Azure cost.
+- Samples (and infrastructures) may contain additional files specific to their use cases.
+
+### Infrastructure Architectures
+
+We provide several common architectural approaches to integrating APIM into your Azure ecosystem. While these are high-fidelity setups, they are not production-ready. Please refer to the [Azure API Management landing zone accelerator](https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/app-platform/api-management/landing-zone-accelerator) for up-to-date production setups.
+
+- [Simple API Management](./infrastructure/simple-apim) (simple-apim)
+  - Just the basics with a publicly accessible API Management intance fronting your APIs. This is the innermost way to experience and experiment with the APIM policies.
+
+- [API Management & Container Apps](./infrastructure/apim-aca) (apim-aca)
+  - APIs are often times implemented in containers that are running in Azure Container Apps. This architecture accesses the container apps publicly. It's beneficial to test both APIM and container app URLs here to contrast and compare experiences of API calls through and bypassing APIM. It is not intended to be a security baseline.
+
+- [Secure Front Door & API Management & Container Apps](./infrastructure/afd-apim) (afd-apim)
+  - A higher-fidelity implementation of a secured setup in which Azure Front Door connects to APIM via the new private link integration. This traffic, once it traverses through Front Door, rides entirely on Microsoft-owned and operated networks. Similarly, the connection from APIM to Container Apps is secured but through a VNet configuration (it is also entirely possible to do this via private link). It's noteworthy that we are using APIM Standard V2 here as we need the ability to accept a private link from Front Door.
+
+---
+
+## Development
+
+As you work with this repo, you will likely want to make your own customizations. There's little you need to know to be successful.
+
+The repo uses the bicep linter and has rules defined in `bicepconfig.json`. See the [bicep linter documentation](https://learn.microsoft.com/azure/azure-resource-manager/bicep/bicep-config-linter) for details.
+
+**We welcome contributions!** Please consider forking the repo and creating issues and pull requests to share your samples. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details. Thank you! 
+
 ### Adding a Sample
 
 Adding a new sample is relatively straight-forward.
@@ -101,16 +113,6 @@ Adding a new sample is relatively straight-forward.
 1. Add any policy.xml files to the same folder if they are specific to this sample. If they are to be reused, place them into the `/shared/apim-policies` folder instead.
 1. Test the sample with all supported infrastructures.
 1. Create a pull request for merge.
-
----
-
-## Development
-
-As you work with this repo, you will likely want to make your own customizations. There's little you need to know to be successful.
-
-The repo uses the bicep linter and has rules defined in `bicepconfig.json`. See the [bicep linter documentation](https://learn.microsoft.com/azure/azure-resource-manager/bicep/bicep-config-linter) for details.
-
-We welcome contributions! Please consider forking the repo and creating issues and pull requests to share your samples. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details. Thank you! 
 
 ### Testing & Code Coverage
 
