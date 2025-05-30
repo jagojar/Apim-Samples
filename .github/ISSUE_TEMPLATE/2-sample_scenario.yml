@@ -1,0 +1,67 @@
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+
+name: "Sample Scenario Request"
+description: "Suggest a new API Management Sample Scenario."
+title: "[Scenario]: <title>"
+labels: ["triage"]
+type: "Feature"
+assignees:
+  - simonkurtz-MSFT
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Scenario Request
+
+        Please fill out the form below to help us understand your request. This is a more specialized feature request specifically 
+        for proposing sample scenarios that can be used to demonstrate the capabilities of API Management.
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: "Describe the Scenario"
+      description: "What scenario are you proposing?"
+      placeholder: "Please describe the sample scenario / use case you are proposing. What should it demonstrate?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: "Improvement to Project"
+      description: "How will it improve this project?"
+      placeholder: "Please describe how this feature will improve the project. What value does it provide that you currently do not have? How does it help YOU?"
+    validations:
+      required: true
+
+  - type: checkbox
+    id: infra_arch
+    attributes:
+      label: "What infrastructure architectures should this scenario use?"
+      description: "Select all that apply."
+      options:
+        - "Simple API Management"
+        - "API Management with Container Apps"
+        - "Azure Front Door with API Management and optional Container Apps"
+        - "Other/New"
+    validations:
+      required: false
+
+  - type: input
+    id: infra_arch_other
+    attributes:
+      label: "Other Infrastructure Architecture"
+      description: "If you selected 'Other' above, please specify your infrastructure architecture. Otherwise, leave blank."
+    validations:
+      required: false      
+
+  - type: dropdown
+    id: collaborate
+    attributes:
+      label: "Are you able to collaborate and/or submit a pull request?"
+      description: "Select one."
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
