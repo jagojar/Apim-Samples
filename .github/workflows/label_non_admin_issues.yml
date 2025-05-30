@@ -1,6 +1,10 @@
 
 name: Label Non-Admin Issues
 
+permissions:
+  contents: read
+  issues: write
+
 on:
   issues:
     types: [opened]
