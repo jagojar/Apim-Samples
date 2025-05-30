@@ -1,0 +1,22 @@
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
+
+name: "Task"
+description: "Create a general task that does not fit other categories."
+title: "[Task]: <title>"
+labels: ["triage"]
+type: "Task"
+assignees:
+  - simonkurtz-MSFT
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tasks are primarily to be used for repo maintainers. In other words, this should mostly be reserved for Engineering's To-Do list.
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: "Describe the task"
+      description: "What needs to or should be done?"
+    validations:
+      required: true
