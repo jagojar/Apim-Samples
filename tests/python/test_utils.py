@@ -163,15 +163,6 @@ def test_read_policy_xml_empty_file(monkeypatch):
     assert result == ''
     
 # ------------------------------
-#    policy_xml_replacement
-# ------------------------------
-
-def test_policy_xml_replacement(monkeypatch):
-    m = mock_open(read_data='<xml>foo</xml>')
-    monkeypatch.setattr(builtins, 'open', m)
-    assert utils.policy_xml_replacement('dummy.xml') == '<xml>foo</xml>'
-
-# ------------------------------
 #    cleanup_resources (smoke)
 # ------------------------------
 

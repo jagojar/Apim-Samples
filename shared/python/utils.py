@@ -306,26 +306,6 @@ def does_resource_group_exist(rg_name: str) -> bool:
     output = run(f"az group show --name {rg_name}", print_output = False, print_errors = False)
     return output.success
 
-def policy_xml_replacement(policy_xml_filepath: str) -> str:
-    """
-    Read and return the contents of a policy XML file.
-
-    Args:
-        policy_xml_filepath (str): Path to the policy XML file.
-
-    Returns:
-        str: Contents of the policy XML file.
-    """
-
-    # Read the specified policy XML file
-    with open(policy_xml_filepath, 'r') as policy_xml_file:
-        policy_template_xml = policy_xml_file.read()
-
-    # TODO: Perform any replacements here
-
-    # Convert the XML to JSON format
-    return policy_template_xml
-
 def read_policy_xml(policy_xml_filepath: str) -> str:
     """
     Read and return the contents of a policy XML file.
