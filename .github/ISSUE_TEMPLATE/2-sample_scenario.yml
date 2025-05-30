@@ -34,7 +34,7 @@ body:
     validations:
       required: true
 
-  - type: checkbox
+  - type: checkboxes
     id: infra_arch
     attributes:
       label: "What infrastructure architectures should this scenario use?"
