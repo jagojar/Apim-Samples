@@ -579,7 +579,9 @@ def run(command: str, ok_message: str = '', error_message: str = '', print_outpu
         # Handles both CalledProcessError and any custom/other exceptions (for test mocks)
         output_text = getattr(e, 'output', b'').decode("utf-8") if hasattr(e, 'output') and isinstance(e.output, (bytes, bytearray)) else str(e)
         success = False
-        traceback.print_exc()
+        
+        if print_errors:
+            traceback.print_exc()
 
     if print_output:
         print(f"Command output:\n{output_text}")
