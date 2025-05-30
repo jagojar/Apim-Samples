@@ -3,7 +3,7 @@
 name: "Sample Scenario"
 description: "Suggest a new API Management Sample Scenario."
 title: "[Scenario]: <title>"
-labels: ["triage"]
+labels: ["triage", "scenario"]
 type: "Feature"
 assignees:
   - simonkurtz-MSFT
@@ -21,5 +21,14 @@ body:
       label: "Describe the scenario"
       description: "What scenario are you proposing?"
       placeholder: "Please describe the sample scenario / use case you are proposing. What should it demonstrate?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: "Improvement to Project"
+      description: "How will it improve this project?"
+      placeholder: "Please describe how this feature will improve the project. What value does it provide that you currently do not have? How does it help YOU?"
     validations:
       required: true
