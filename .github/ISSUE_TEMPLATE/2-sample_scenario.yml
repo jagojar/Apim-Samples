@@ -1,8 +1,8 @@
 # https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms
 
-name: "Sample Scenario Request"
-description: "Suggest a new API Management Sample Scenario."
-title: "[Scenario]: <title>"
+name: "Sample Scenario"
+description: "Suggest a new feature or improvement."
+title: "[Feature]: <title>"
 labels: ["triage"]
 type: "Feature"
 assignees:
@@ -11,6 +11,35 @@ body:
   - type: markdown
     attributes:
       value: |
-        ## Scenario Request
+        ## Feature Request
 
-        Please fill out the form below to help us understand your request. This is a more specialized feature request specifically for proposing sample scenarios that can be used to demonstrate the capabilities of API Management.
+        Please fill out the form below to help us understand your request.
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: "Describe the feature"
+      description: "What feature are you proposing?"
+      placeholder: "Please describe the feature you are proposing."
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: "Improvement to Project"
+      description: "How will it improve this project?"
+      placeholder: "Please describe how this feature will improve the project."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: collaborate
+    attributes:
+      label: "Are you able to collaborate and/or submit a pull request?"
+      description: "Select one."
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
