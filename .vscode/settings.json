@@ -19,5 +19,64 @@
     "python.terminal.activateEnvironment": true,
     "terminal.integrated.env.windows": {
         "PATH": "${env:PATH}"
+    },
+      // XML and APIM Policy Configuration - Conservative formatting to preserve policy expressions
+    "xml.validation.enabled": false,
+    "xml.validation.namespaces.enabled": "never",
+    "xml.validation.schema.enabled": "never",
+    "xml.validation.disallowDocTypeDecl": false,
+    "xml.validation.resolveExternalEntities": false,
+    "xml.format.enabled": false,
+    "xml.format.emptyElements": "ignore",
+    "xml.format.enforceQuoteStyle": "preferred",
+    "xml.format.preserveEmptyContent": true,
+    "xml.format.preserveSpace": [
+        "xsl:text",
+        "xsl:comment",
+        "xsl:processing-instruction",
+        "literal",
+        "xsl:preserve-space",
+        "fragment",
+        "condition"
+    ],
+    "xml.format.splitAttributes": "preserve",
+    "xml.format.joinCDATALines": false,
+    "xml.format.joinCommentLines": false,
+    "xml.format.joinContentLines": false,
+    "xml.format.spaceBeforeEmptyCloseTag": true,
+    "xml.format.xsiSchemaLocationSplit": "onPair",
+    "xml.completion.autoCloseTags": true,
+    "xml.codeLens.enabled": false,
+    "xml.preferences.includeSchemaAssociations": "never",
+    "xml.trace.server": "off",
+    
+    // File associations for APIM policies
+    "files.associations": {
+        "*.xml": "xml",
+        "**/apim-policies/*.xml": "xml",
+        "**/samples/**/*.xml": "xml",
+        "pf-*.xml": "xml",
+        "hr_*.xml": "xml"
+    },
+    
+    // Disable HTML validation for XML files
+    "html.validate": false,
+    
+    // APIM specific settings - let the APIM extension handle validation
+    "azureApiManagement.policies.validateSyntax": true,
+    "azureApiManagement.policies.showCodeLens": true,
+      // Language mode overrides for APIM policy files - DISABLE FORMATTING TO PRESERVE POLICY EXPRESSIONS
+    "[xml]": {
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        },
+        "editor.autoClosingBrackets": "always",
+        "editor.autoClosingQuotes": "always",
+        "editor.suggest.insertMode": "replace",
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false
     }
 }

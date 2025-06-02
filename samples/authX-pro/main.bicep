@@ -12,6 +12,8 @@ param namedValues array = []
 param apimName string = 'apim-${resourceSuffix}'
 param appInsightsName string = 'appi-${resourceSuffix}'
 param apis array = []
+param products array = []
+param policyFragments array = []
 
 // [ADD RELEVANT PARAMETERS HERE]
 
@@ -33,9 +35,9 @@ resource apimService 'Microsoft.ApiManagement/service@2024-06-01-preview' existi
 }
 
 // APIM Named Values
-module namedValue '../../shared/bicep/modules/apim/v1/named-value.bicep' = [for nv in namedValues: if (!empty(namedValues)) {
-  name: nv.name
-  params: {
+module namedValue '../../shared/bicep/modules/apim/v1/named-value.bicep' = [for nv in namedValues: {
+  name: 'nv-${nv.name}'
+  params:{
     apimName: apimName
     namedValueName: nv.name
     namedValueValue: nv.value
@@ -43,17 +45,52 @@ module namedValue '../../shared/bicep/modules/apim/v1/named-value.bicep' = [for 
   }
 }]
 
-// APIM APIs
-module apisModule '../../shared/bicep/modules/apim/v1/api.bicep' = [for api in apis: if(!empty(apis)) {
-  name: '${api.name}-${resourceSuffix}'
+// APIM Policy Fragments
+module policyFragment '../../shared/bicep/modules/apim/v1/policy-fragment.bicep' = [for pf in policyFragments: {
+  name: 'pf-${pf.name}'
+  params:{
+    apimName: apimName
+    policyFragmentName: pf.name
+    policyFragmentDescription: pf.description
+    policyFragmentValue: pf.policyXml
+  }
+  dependsOn: [
+    namedValue
+  ]
+}]
+
+// APIM Products
+module productHr '../../shared/bicep/modules/apim/v1/product.bicep' = [for product in products: {
+  name: 'product-${product.name}'
   params: {
+    apimName: apimName
+    productName: product.name
+    productDisplayName: product.displayName
+    productDescription: product.description
+    productState: product.state
+    subscriptionRequired: product.subscriptionRequired
+    approvalRequired: product.approvalRequired
+    policyXml: product.policyXml
+  }
+  dependsOn: [
+    namedValue
+    policyFragment
+  ]
+}]
+
+// APIM APIs
+module apisModule '../../shared/bicep/modules/apim/v1/api.bicep' = [for api in apis: {
+  name: 'api-${api.name}'
+  params:{
     apimName: apimName
     appInsightsInstrumentationKey: appInsightsInstrumentationKey
     appInsightsId: appInsightsId
     api: api
+    productNames: api.productNames ?? []
   }
   dependsOn: [
-    namedValue               // ensure all named values are created before APIs
+    namedValue              // ensure all named values are created before APIs
+    productHr               // ensure products are created before APIs that reference them
   ]
 }]
 
