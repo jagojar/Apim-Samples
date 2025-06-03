@@ -14,6 +14,7 @@ from typing import List, Optional
 # These paths are relative to the infrastructure and samples
 SHARED_XML_POLICY_BASE_PATH         = '../../shared/apim-policies'
 DEFAULT_XML_POLICY_PATH             = f'{SHARED_XML_POLICY_BASE_PATH}/default.xml'
+REQUIRE_PRODUCT_XML_POLICY_PATH     = f'{SHARED_XML_POLICY_BASE_PATH}/require-product.xml'
 HELLO_WORLD_XML_POLICY_PATH         = f'{SHARED_XML_POLICY_BASE_PATH}/hello-world.xml'
 REQUEST_HEADERS_XML_POLICY_PATH     = f'{SHARED_XML_POLICY_BASE_PATH}/request-headers.xml'
 BACKEND_XML_POLICY_PATH             = f'{SHARED_XML_POLICY_BASE_PATH}/backend.xml'
@@ -121,11 +122,14 @@ class API:
     operations: Optional[List['APIOperation']] = None
     tags: Optional[List[str]] = None
     productNames: Optional[List[str]] = None
+    subscriptionRequired: bool = False
+
     # ------------------------------
     #    CONSTRUCTOR
     # ------------------------------
 
-    def __init__(self, name: str, displayName: str, path: str, description: str, policyXml: Optional[str] = None, operations: Optional[List['APIOperation']] = None, tags: Optional[List[str]] = None, productNames: Optional[List[str]] = None):
+    def __init__(self, name: str, displayName: str, path: str, description: str, policyXml: Optional[str] = None, operations: Optional[List['APIOperation']] = None, tags: Optional[List[str]] = None, 
+                 productNames: Optional[List[str]] = None, subscriptionRequired: bool = False):
         self.name = name
         self.displayName = displayName
         self.path = path
@@ -134,6 +138,8 @@ class API:
         self.operations = operations if operations is not None else []
         self.tags = tags if tags is not None else []
         self.productNames = productNames if productNames is not None else []
+        self.subscriptionRequired = subscriptionRequired
+
     # ------------------------------
     #    PUBLIC METHODS
     # ------------------------------
@@ -144,7 +150,8 @@ class API:
             "displayName": self.displayName,
             "path": self.path,
             "description": self.description,
-            "operations": [op.to_dict() for op in self.operations] if self.operations else []
+            "operations": [op.to_dict() for op in self.operations] if self.operations else [],
+            "subscriptionRequired": self.subscriptionRequired
         }
 
         if self.policyXml is not None:

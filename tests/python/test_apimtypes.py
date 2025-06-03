@@ -531,3 +531,153 @@ def test_product_repr():
     assert "Product" in result
     assert "hr" in result
     assert "Human Resources" in result
+
+@pytest.mark.unit
+def test_api_subscription_required_default():
+    """Test that API object has subscriptionRequired defaulting to False."""
+    api = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None
+    )
+    assert api.subscriptionRequired == False
+
+@pytest.mark.unit
+def test_api_subscription_required_explicit_false():
+    """Test creation of API object with explicit subscriptionRequired=False."""
+    api = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = False
+    )
+    assert api.subscriptionRequired == False
+
+@pytest.mark.unit
+def test_api_subscription_required_explicit_true():
+    """Test creation of API object with explicit subscriptionRequired=True."""
+    api = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = True
+    )
+    assert api.subscriptionRequired == True
+
+@pytest.mark.unit
+def test_api_to_dict_includes_subscription_required_when_true():
+    """Test that to_dict includes subscriptionRequired when True."""
+    api = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = True
+    )
+    d = api.to_dict()
+    assert "subscriptionRequired" in d
+    assert d["subscriptionRequired"] == True
+
+@pytest.mark.unit
+def test_api_to_dict_includes_subscription_required_when_false():
+    """Test that to_dict includes subscriptionRequired when explicitly False."""
+    api = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = False
+    )
+    d = api.to_dict()
+    assert "subscriptionRequired" in d
+    assert d["subscriptionRequired"] == False
+
+@pytest.mark.unit
+def test_api_equality_with_subscription_required():
+    """Test equality comparison for API objects with different subscriptionRequired values."""
+    api1 = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = True
+    )
+    api2 = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = True
+    )
+    api3 = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        subscriptionRequired = False
+    )
+    
+    # Same subscriptionRequired values should be equal
+    assert api1 == api2
+    
+    # Different subscriptionRequired values should not be equal
+    assert api1 != api3
+
+@pytest.mark.unit
+def test_api_with_all_properties():
+    """Test creation of API object with all properties including subscriptionRequired."""
+    tags = ["tag1", "tag2"]
+    product_names = ["product1", "product2"]
+    api = apimtypes.API(
+        name = EXAMPLE_NAME,
+        displayName = EXAMPLE_DISPLAY_NAME,
+        path = EXAMPLE_PATH,
+        description = EXAMPLE_DESCRIPTION,
+        policyXml = EXAMPLE_POLICY_XML,
+        operations = None,
+        tags = tags,
+        productNames = product_names,
+        subscriptionRequired = True
+    )
+    
+    assert api.name == EXAMPLE_NAME
+    assert api.displayName == EXAMPLE_DISPLAY_NAME
+    assert api.path == EXAMPLE_PATH
+    assert api.description == EXAMPLE_DESCRIPTION
+    assert api.policyXml == EXAMPLE_POLICY_XML
+    assert api.operations == []
+    assert api.tags == tags
+    assert api.productNames == product_names
+    assert api.subscriptionRequired == True
+    
+    d = api.to_dict()
+    assert d["name"] == EXAMPLE_NAME
+    assert d["displayName"] == EXAMPLE_DISPLAY_NAME
+    assert d["path"] == EXAMPLE_PATH
+    assert d["description"] == EXAMPLE_DESCRIPTION
+    assert d["policyXml"] == EXAMPLE_POLICY_XML
+    assert d["tags"] == tags
+    assert d["productNames"] == product_names
+    assert d["subscriptionRequired"] == True
+
+
+# ------------------------------

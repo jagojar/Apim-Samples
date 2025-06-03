@@ -1,0 +1,28 @@
+<!--
+    Policy that ensures the API is called with a product subscription.
+    This policy validates that the request includes a valid product context.
+    Returns 403 Unauthorized with JSON error response if no product subscription is found.
+-->
+<policies>
+    <inbound>
+        <base />
+        <!-- Validate that a product subscription is present -->
+        <choose>
+            <when condition="@(context.Product == null)">
+                <return-response>
+                    <set-status code="403" reason="Unauthorized" />
+                    <set-body>"This API requires a valid product subscription to access."</set-body>
+                </return-response>
+            </when>
+        </choose>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

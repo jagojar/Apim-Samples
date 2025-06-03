@@ -60,12 +60,12 @@ resource apimApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = {
     path: api.path
     protocols: [
       'https'
-    ]
+    ]   
     subscriptionKeyParameterNames: {
       header: 'api-key'
       query: 'api-key'
     }
-    subscriptionRequired: false
+    subscriptionRequired: api.?subscriptionRequired ?? false
     type: 'http'
   }
 }
