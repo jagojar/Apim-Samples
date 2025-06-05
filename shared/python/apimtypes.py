@@ -4,7 +4,7 @@ Types and constants for Azure API Management automation and deployment.
 
 from enum import StrEnum
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 
 
 # ------------------------------
@@ -21,11 +21,6 @@ BACKEND_XML_POLICY_PATH             = f'{SHARED_XML_POLICY_BASE_PATH}/backend.xm
 
 SUBSCRIPTION_KEY_PARAMETER_NAME = 'api_key'
 SLEEP_TIME_BETWEEN_REQUESTS_MS  = 50
-
-# Mock role IDs for testing purposes
-HR_MEMBER_ROLE_ID          = "316790bc-fbd3-4a14-8867-d1388ffbc195"
-HR_ASSOCIATE_ROLE_ID       = "d3c1b0f2-4a5e-4c8b-9f6d-7c8e1f2a3b4c"
-HR_ADMINISTRATOR_ROLE_ID   = "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
 
 
 # ------------------------------
@@ -54,6 +49,17 @@ def _read_policy_xml(policy_xml_filepath: str) -> str:
 # ------------------------------
 #    CLASSES
 # ------------------------------
+
+# Mock role IDs for testing purposes
+class Role:
+    """
+    Predefined roles and their GUIDs (mocked for testing purposes).
+    """
+
+    NONE                = "00000000-0000-0000-0000-000000000000"  # No role assigned
+    HR_MEMBER           = "316790bc-fbd3-4a14-8867-d1388ffbc195"
+    HR_ASSOCIATE        = "d3c1b0f2-4a5e-4c8b-9f6d-7c8e1f2a3b4c"
+    HR_ADMINISTRATOR    = "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
 
 class APIMNetworkMode(StrEnum):
     """
@@ -170,12 +176,12 @@ class APIOperation:
     method: HTTP_VERB
     description: str
     policyXml: str
-    templateParameters: Optional[List[Dict[str, Any]]] = None
+    templateParameters: Optional[List[dict[str, Any]]] = None
     # ------------------------------
     #    CONSTRUCTOR
     # ------------------------------
 
-    def __init__(self, name: str, displayName: str, urlTemplate: str, method: HTTP_VERB, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[Dict[str, Any]]] = None):
+    def __init__(self, name: str, displayName: str, urlTemplate: str, method: HTTP_VERB, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[dict[str, Any]]] = None):
         # Validate that method is a valid HTTP_VERB
         if not isinstance(method, HTTP_VERB):
             try:
@@ -216,7 +222,7 @@ class GET_APIOperation(APIOperation):
     #    CONSTRUCTOR
     # ------------------------------
 
-    def __init__(self, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[Dict[str, Any]]] = None):
+    def __init__(self, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[dict[str, Any]]] = None):
         super().__init__('GET', 'GET', '/', HTTP_VERB.GET, description, policyXml, templateParameters)
 
 
@@ -229,7 +235,7 @@ class GET_APIOperation2(APIOperation):
     #    CONSTRUCTOR
     # ------------------------------
 
-    def __init__(self, name: str, displayName: str, urlTemplate: str, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[Dict[str, Any]]] = None):
+    def __init__(self, name: str, displayName: str, urlTemplate: str, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[dict[str, Any]]] = None):
         super().__init__(name, displayName, urlTemplate, HTTP_VERB.GET, description, policyXml, templateParameters)
 
 
@@ -242,7 +248,7 @@ class POST_APIOperation(APIOperation):
     #    CONSTRUCTOR
     # ------------------------------
     
-    def __init__(self, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[Dict[str, Any]]] = None):
+    def __init__(self, description: str, policyXml: Optional[str] = None, templateParameters: Optional[List[dict[str, Any]]] = None):
         super().__init__('POST', 'POST', '/', HTTP_VERB.POST, description, policyXml, templateParameters)
 
 
