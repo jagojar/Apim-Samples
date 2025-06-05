@@ -17,7 +17,7 @@
         <set-url>@((string)context.Variables["blobUrl"])</set-url>
         <set-method>HEAD</set-method>
         <!-- The x-ms-version header MUST be sent or a 403 will be returned. -->
-        <!-- https://learn.microsoft.com/en-us/rest/api/storageservices/versioning-for-the-azure-storage-services#specifying-service-versions-in-requests -->
+        <!-- https://learn.microsoft.com/rest/api/storageservices/versioning-for-the-azure-storage-services#specifying-service-versions-in-requests -->
         <set-header name="x-ms-version" exists-action="override">
             <value>2025-05-05</value>
         </set-header>
