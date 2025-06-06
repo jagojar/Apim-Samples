@@ -67,9 +67,21 @@ param apimManagedIdentityType string = 'SystemAssigned'
 param apimUserAssignedManagedIdentityId string = ''
 
 
+@description('Content of the global All APIs policy XML. If provided, sets the global policy.')
+param globalPolicyXml string = loadTextContent('../../../../apim-policies/all-apis.xml')
+
 // ------------------------------
 //    RESOURCES
 // ------------------------------
+// https://learn.microsoft.com/azure/templates/microsoft.apimanagement/service/policies
+resource apimGlobalPolicy 'Microsoft.ApiManagement/service/policies@2024-06-01-preview' = if (!empty(globalPolicyXml)) {
+  name: 'policy'
+  parent: apimService
+  properties: {
+    format: 'xml'
+    value: globalPolicyXml
+  }
+}
 
 // https://learn.microsoft.com/azure/templates/microsoft.apimanagement/service
 resource apimService 'Microsoft.ApiManagement/service@2024-06-01-preview' = {

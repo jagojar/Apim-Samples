@@ -1,0 +1,29 @@
+<!--
+    This is the global All APIs policy.
+    If you want to apply CORS policies to all APIs, uncomment the CORS policy block below and make the necessary adjustments to the allowed origins.
+-->
+<policies>
+    <inbound>
+        <!--
+        <cors allow-credentials="true" terminate-unmatched-request="false">
+            <allowed-origins>
+                <origin>[ADD YOUR ORIGINS]</origin>
+            </allowed-origins>
+            <allowed-methods preflight-result-max-age="300">
+                <method>*</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>*</header>
+            </expose-headers>
+        </cors>
+        -->
+    </inbound>
+    <backend>
+        <forward-request />
+    </backend>
+    <outbound />
+    <on-error />
+</policies>
