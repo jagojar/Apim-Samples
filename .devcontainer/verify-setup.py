@@ -53,6 +53,28 @@ def check_python_packages():
     return True
 
 
+def check_shared_python_modules():
+    """Check if shared Python modules can be imported."""
+    print("\n📦 Checking shared Python modules...")
+    shared_modules = ['utils', 'apimrequests', 'apimtypes', 'authfactory', 'users']
+    missing_modules = []
+    
+    for module in shared_modules:
+        try:
+            importlib.import_module(module)
+            print(f"  ✅ {module}")
+        except ImportError as e:
+            missing_modules.append(module)
+            print(f"  ❌ {module} - {e}")
+    
+    if missing_modules:
+        print(f"  ⚠️  Missing shared modules: {', '.join(missing_modules)}")
+        print("  💡 Tip: Run 'python setup/setup_python_path.py --generate-env' to fix the Python path")
+        return False
+    
+    return True
+
+
 def check_commands():
     """Check if required command-line tools are available."""
     print("\n🔧 Checking command-line tools...")
@@ -121,6 +143,9 @@ def check_azure_cli():
         
         return True
         
+    except FileNotFoundError:
+        print("  ❌ Azure CLI not found")
+        return False
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         print("  ❌ Azure CLI not working properly")
         return False
@@ -132,6 +157,7 @@ def main():
     
     checks = [
         check_python_packages(),
+        check_shared_python_modules(),
         check_commands(),
         check_jupyter_kernel(),
         check_azure_cli()
@@ -139,19 +165,24 @@ def main():
     
     print("\n" + "="*50)
     
-    if all(checks):
+    if all(checks):        
         print("🎉 All checks passed! Your dev container is ready to use.")
-        print("\n📋 Next steps:")
-        print("1. Sign in to Azure: az login")
-        print("2. Execute shared/jupyter/verify-az-account.ipynb")
-        print("3. Explore the samples and infrastructure folders")
+        print("\n📋 Next steps:\n")
+        print("1. Configure Azure CLI: python .devcontainer/configure-azure-mount.py")
+        print("2. Or manually sign in with tenant-specific login:")
+        print("   az login --tenant <your-tenant-id-or-domain>")
+        print("   az account set --subscription <your-subscription-id-or-name>")
+        print("   az account show  # Verify your context")
+        print("3. Execute shared/jupyter/verify-az-account.ipynb")
+        print("4. If prompted, initialize the kernel according to the `Initialization` steps in the root README.md file")
+        print("5. Explore the samples and infrastructure folders\n")
         return 0
     else:
         print("❌ Some checks failed. Please review the output above.")
-        print("\n🔧 Try these troubleshooting steps:")
+        print("\n🔧 Try these troubleshooting steps:\n")
         print("1. Rebuild the container: Dev Containers: Rebuild Container")
         print("2. Manually run: pip install -r requirements.txt")
-        print("3. Check the .devcontainer/README.md for more help")
+        print("3. Check the .devcontainer/README.md for more help\n")
         return 1
 
 

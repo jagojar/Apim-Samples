@@ -1,10 +1,9 @@
 {
   "name": "APIM Samples Development Environment",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
-  
   "features": {
     "ghcr.io/devcontainers/features/azure-cli:1": {
-      "version": "latest"
+      "version": "2.72.0"
     },
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
@@ -20,7 +19,6 @@
       "ppa": true
     }
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -61,20 +59,16 @@
       }
     }
   },
-
   "containerEnv": {
-    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python"
+    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples"
   },
-
   "postCreateCommand": "bash .devcontainer/setup.sh",
-
   "forwardPorts": [
     8000,
     8080,
     5000,
     3000
   ],
-
   "portsAttributes": {
     "8000": {
       "label": "Python Development Server",
@@ -93,11 +87,7 @@
       "onAutoForward": "notify"
     }
   },
-
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/Apim-Samples",
-
-  "mounts": [
-    "source=${localEnv:HOME}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached"
-  ]
+  "mounts": []
 }
