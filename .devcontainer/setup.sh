@@ -40,8 +40,14 @@ az extension add --name front-door --only-show-errors 2>/dev/null || true
 # ------------------------------
 
 echo "📓 Setting up Jupyter environment..."
-# Install Jupyter kernel
-python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python"
+# Install Jupyter kernel (with error handling)
+if python -c "import ipykernel" 2>/dev/null; then
+    python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python" || echo "⚠️ Warning: Failed to install Jupyter kernel, but continuing..."
+else
+    echo "⚠️ Warning: ipykernel not found. Installing it now..."
+    pip install ipykernel
+    python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python" || echo "⚠️ Warning: Failed to install Jupyter kernel, but continuing..."
+fi
 
 # ------------------------------
 #    WORKSPACE CONFIGURATION
@@ -83,9 +89,16 @@ echo "Azure CLI version:"
 az --version | head -1
 
 echo "Pip packages installed:"
-pip list | grep -E "(requests|pandas|matplotlib|pytest|azure|jwt)"
+pip list | grep -E "(requests|pandas|matplotlib|pytest|azure|jwt|jupyter|ipykernel)"
+
+echo "Jupyter kernels available:"
+jupyter kernelspec list 2>/dev/null || echo "⚠️ Jupyter kernels could not be listed"
 
 echo "🎉 Development environment setup complete!"
+
+echo "🔍 Running final verification..."
+python .devcontainer/verify-setup.py
+
 echo ""
 echo "📋 Next steps:"
 echo "1. Sign in to Azure: az login"

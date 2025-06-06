@@ -42,6 +42,7 @@ All packages from `requirements.txt` are pre-installed:
 - `pyjwt` - JWT token handling
 - `pytest` & `pytest-cov` - Testing framework
 - `azure.storage.blob` & `azure.identity` - Azure SDK components
+- `jupyter`, `ipykernel`, `notebook` - Jupyter notebook support
 
 ### Environment Configuration
 - **PYTHONPATH** - Automatically configured to include shared Python modules
@@ -83,6 +84,17 @@ The container mounts your local `~/.azure` directory to preserve authentication 
 
 ## 🐛 Troubleshooting
 
+### Container Creation Failed with ipykernel Error
+If you see an error like `/usr/local/bin/python: No module named ipykernel`:
+1. This has been fixed in the latest version
+2. If you're still experiencing issues, manually rebuild the container:
+   - Command Palette → "Dev Containers: Rebuild Container"
+3. Or run the manual setup:
+   ```bash
+   pip install ipykernel jupyter notebook
+   python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python"
+   ```
+
 ### Python Path Issues
 If you encounter import errors:
 ```bash
@@ -92,6 +104,7 @@ python setup/setup_python_path.py --generate-env
 ### Jupyter Kernel Not Found
 Restart VS Code or refresh the Jupyter kernel list:
 - Command Palette → "Jupyter: Refresh Kernels"
+- Or manually check available kernels: `jupyter kernelspec list`
 
 ### Azure CLI Issues
 Check Azure CLI status:

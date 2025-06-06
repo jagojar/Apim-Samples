@@ -47,8 +47,19 @@ try {
 # ------------------------------
 
 Write-Host "📓 Setting up Jupyter environment..." -ForegroundColor Yellow
-# Install Jupyter kernel
-python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python"
+# Install Jupyter kernel (with error handling)
+try {
+    python -c "import ipykernel" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python"
+    } else {
+        Write-Host "⚠️ Warning: ipykernel not found. Installing it now..." -ForegroundColor Yellow
+        pip install ipykernel
+        python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python"
+    }
+} catch {
+    Write-Host "⚠️ Warning: Failed to install Jupyter kernel, but continuing..." -ForegroundColor Yellow
+}
 
 # ------------------------------
 #    WORKSPACE CONFIGURATION
@@ -95,9 +106,20 @@ $azVersion = az --version | Select-Object -First 1
 Write-Host $azVersion
 
 Write-Host "Pip packages installed:" -ForegroundColor Cyan
-pip list | Select-String -Pattern "(requests|pandas|matplotlib|pytest|azure|jwt)"
+pip list | Select-String -Pattern "(requests|pandas|matplotlib|pytest|azure|jwt|jupyter|ipykernel)"
+
+Write-Host "Jupyter kernels available:" -ForegroundColor Cyan
+try {
+    jupyter kernelspec list 2>$null
+} catch {
+    Write-Host "⚠️ Jupyter kernels could not be listed" -ForegroundColor Yellow
+}
 
 Write-Host "🎉 Development environment setup complete!" -ForegroundColor Green
+
+Write-Host "🔍 Running final verification..." -ForegroundColor Yellow
+python .devcontainer/verify-setup.py
+
 Write-Host ""
 Write-Host "📋 Next steps:" -ForegroundColor Yellow
 Write-Host "1. Sign in to Azure: az login"

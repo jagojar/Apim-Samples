@@ -9,3 +9,6 @@ pytest
 pytest-cov
 azure.storage.blob
 azure.identity
+jupyter
+ipykernel
+notebook
