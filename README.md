@@ -18,7 +18,20 @@ _Try it out, learn from it, apply it in your setups._
 
 ## 🚀 Getting Started
 
-### 📋 Prerequisites
+### � Quick Start Options
+
+#### Option 1: GitHub Codespaces / Dev Container (Recommended)
+
+The fastest way to get started is using our pre-configured development environment:
+
+- **GitHub Codespaces**: Click the green "Code" button → "Codespaces" → "Create codespace on main"
+- **VS Code Dev Containers**: Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), then "Reopen in Container"
+
+All prerequisites are automatically installed and configured. See [.devcontainer/README.md](.devcontainer/README.md) for details.
+
+#### Option 2: Local Setup
+
+### �📋 Prerequisites
 
 These prerequisites apply broadly across all infrastructure and samples. If there are specific deviations, expect them to be noted there.
 

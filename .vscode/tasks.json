@@ -20,6 +20,49 @@
             },
             "problemMatcher": [],
             "detail": "Configure PYTHONPATH for cross-platform compatibility"
+        },
+        {
+            "label": "Dev Container: Rebuild Container",
+            "type": "shell",
+            "command": "${input:rebuildDevContainer}",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "detail": "Rebuild the development container"
+        },
+        {
+            "label": "Dev Container: Setup Environment (Manual)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.devcontainer/setup.sh",
+            "windows": {
+                "command": "powershell",
+                "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/.devcontainer/setup.ps1"]
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "detail": "Manually run the dev container setup script"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "rebuildDevContainer",
+            "type": "command",
+            "command": "dev-containers.rebuildContainer"
         }
     ]
 }
