@@ -49,11 +49,11 @@ The first time you run a Jupyter notebook, you'll be asked to install the Jupyte
 
 | Sample Name                                                     | Description                                                                                                         | Supported Infrastructure(s)   |
 |:----------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:------------------------------|
-| [AuthX](./samples/authx/README.md)                           | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
-| [AuthX Pro](./samples/authx-pro/README.md)                   | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
-| [General](./samples/general/README.md)                       | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
-| [Load Balancing](./samples/load-balancing/README.md)         | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
-| [Secure Blob Access](./samples/secure-blob-access/README.md) | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
+| [AuthX](./samples/authx/README.md)                              | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
+| [AuthX Pro](./samples/authx-pro/README.md)                      | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
+| [General](./samples/general/README.md)                          | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
+| [Load Balancing](./samples/load-balancing/README.md)            | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
+| [Secure Blob Access](./samples/secure-blob-access/README.md)    | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
 
 ### ▶️ Running a Sample
 
@@ -88,14 +88,13 @@ Now that infrastructure and sample have been stood up, you can experiment with t
 
 We provide several common architectural approaches to integrating APIM into your Azure ecosystem. While these are high-fidelity setups, they are not production-ready. Please refer to the [Azure API Management landing zone accelerator](https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/app-platform/api-management/landing-zone-accelerator) for up-to-date production setups.
 
-- [Simple API Management](./infrastructure/simple-apim) (simple-apim)
-  - Just the basics with a publicly accessible API Management intance fronting your APIs. This is the innermost way to experience and experiment with the APIM policies.
+## 📦 List of Infrastructures
 
-- [API Management & Container Apps](./infrastructure/apim-aca) (apim-aca)
-  - APIs are often times implemented in containers that are running in Azure Container Apps. This architecture accesses the container apps publicly. It's beneficial to test both APIM and container app URLs here to contrast and compare experiences of API calls through and bypassing APIM. It is not intended to be a security baseline.
-
-- [Secure Front Door & API Management & Container Apps](./infrastructure/afd-apim) (afd-apim)
-  - A higher-fidelity implementation of a secured setup in which Azure Front Door connects to APIM via the new private link integration. This traffic, once it traverses through Front Door, rides entirely on Microsoft-owned and operated networks. Similarly, the connection from APIM to Container Apps is secured but through a VNet configuration (it is also entirely possible to do this via private link). It's noteworthy that we are using APIM Standard V2 here as we need the ability to accept a private link from Front Door.
+| Infrastructure Name                                                               | Description                                                                                                                                                           |
+|:----------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Simple API Management](./infrastructure/simple-apim)                             | Just the basics with a publicly accessible API Management instance fronting your APIs. This is the innermost way to experience and experiment with the APIM policies. |
+| [API Management & Container Apps](./infrastructure/apim-aca)                      | APIs are often implemented in containers running in Azure Container Apps. This architecture accesses the container apps publicly. It's beneficial to test both APIM and container app URLs here to contrast and compare experiences of API calls through and bypassing APIM. It is not intended to be a security baseline. |
+| [Secure Front Door & API Management & Container Apps](./infrastructure/afd-apim)  | A higher-fidelity implementation of a secured setup in which Azure Front Door connects to APIM via the new private link integration. This traffic, once it traverses through Front Door, rides entirely on Microsoft-owned and operated networks. Similarly, the connection from APIM to Container Apps is secured but through a VNet configuration (it is also entirely possible to do this via private link). APIM Standard V2 is used here to accept a private link from Front Door. |
 
 ---
 
