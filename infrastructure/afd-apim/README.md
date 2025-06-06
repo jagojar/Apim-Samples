@@ -1,6 +1,6 @@
 # Front Door & API Management & Container Apps Infrastructure
 
-Secure architecture that takes all traffic off the public Internet once Azure Front Door is traversed. This is due to Front Door's use of a private link to Azure API Management.
+Secure architecture that takes all traffic off the public Internet once Azure Front Door is traversed. Traffic behind the Front Door is subsequently inaccessible to the public. This is due to Front Door's use of a private link to Azure API Management.
 
 <img src="./Azure Front Door, API Management & Container Apps Architecture.svg" alt="Diagram showing Azure Front Door, API Management, and Container Apps architecture. Azure Front Door routes traffic to API Management, which then routes to Container Apps. Telemetry is sent to Azure Monitor." title="Azure Front Door, API Management & Container Apps Architecture" width="1000" />
 
@@ -16,5 +16,7 @@ Secure architecture that takes all traffic off the public Internet once Azure Fr
 Adjust the `user-defined parameters` in this lab's Jupyter Notebook's [Initialize notebook variables](./create.ipynb#initialize-notebook-variables) section.
 
 ## ▶️ Execution
+
+👟 **Expected *Run All* runtime: ~13 minutes**
 
 1. Execute this lab's [Jupyter Notebook](./create.ipynb) step-by-step or via _Run All_.

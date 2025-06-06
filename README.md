@@ -49,11 +49,11 @@ The first time you run a Jupyter notebook, you'll be asked to install the Jupyte
 
 | Sample Name                                                     | Description                                                                                                         | Supported Infrastructure(s)   |
 |:----------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:------------------------------|
-| [AuthX](./samples/authx/create.ipynb)                           | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
-| [AuthX Pro](./samples/authx-pro/create.ipynb)                   | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
-| [General](./samples/general/create.ipynb)                       | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
-| [Load Balancing](./samples/load-balancing/create.ipynb)         | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
-| [Secure Blob Access](./samples/secure-blob-access/create.ipynb) | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
+| [AuthX](./samples/authx/README.md)                           | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
+| [AuthX Pro](./samples/authx-pro/README.md)                   | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
+| [General](./samples/general/README.md)                       | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
+| [Load Balancing](./samples/load-balancing/README.md)         | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
+| [Secure Blob Access](./samples/secure-blob-access/README.md) | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
 
 ### ▶️ Running a Sample
 
