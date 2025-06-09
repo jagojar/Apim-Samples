@@ -111,8 +111,8 @@ For detailed troubleshooting, see [Import Troubleshooting Guide](.devcontainer/I
 
 | Sample Name                                                     | Description                                                                                                         | Supported Infrastructure(s)   |
 |:----------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:------------------------------|
-| [AuthX](./samples/authx/README.md)                              | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
-| [AuthX Pro](./samples/authx-pro/README.md)                      | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
+| [AuthX](./samples/authX/README.md)                              | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
+| [AuthX Pro](./samples/authX-pro/README.md)                      | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
 | [General](./samples/general/README.md)                          | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
 | [Load Balancing](./samples/load-balancing/README.md)            | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
 | [Secure Blob Access](./samples/secure-blob-access/README.md)    | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
