@@ -38,19 +38,19 @@
         "ms-vscode.vscode-json"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "python.defaultInterpreterPath": "~/.venv/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
-        "python.formatting.autopep8Path": "/opt/venv/bin/autopep8",
-        "python.formatting.blackPath": "/opt/venv/bin/black",
-        "python.formatting.yapfPath": "/opt/venv/bin/yapf",
-        "python.linting.banditPath": "/opt/venv/bin/bandit",
-        "python.linting.flake8Path": "/opt/venv/bin/flake8",
-        "python.linting.mypyPath": "/opt/venv/bin/mypy",
-        "python.linting.pycodestylePath": "/opt/venv/bin/pycodestyle",
-        "python.linting.pydocstylePath": "/opt/venv/bin/pydocestyle",
-        "python.linting.pylintPath": "/opt/venv/bin/pylint",
-        "python.testing.pytestPath": "/opt/venv/bin/pytest",
+        "python.formatting.autopep8Path": "~/.venv/bin/autopep8",
+        "python.formatting.blackPath": "~/.venv/bin/black",
+        "python.formatting.yapfPath": "~/.venv/bin/yapf",
+        "python.linting.banditPath": "~/.venv/bin/bandit",
+        "python.linting.flake8Path": "~/.venv/bin/flake8",
+        "python.linting.mypyPath": "~/.venv/bin/mypy",
+        "python.linting.pycodestylePath": "~/.venv/bin/pycodestyle",
+        "python.linting.pydocstylePath": "~/.venv/bin/pydocestyle",
+        "python.linting.pylintPath": "~/.venv/bin/pylint",
+        "python.testing.pytestPath": "~/.venv/bin/pytest",
         "jupyter.askForKernelRestart": false,
         "jupyter.interactiveWindow.textEditor.executeSelection": true,
         "files.associations": {
@@ -60,11 +60,10 @@
     }
   },
   "containerEnv": {
-    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples",
-    "VIRTUAL_ENV": "/opt/venv"
+    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples"
   },
   "initializeCommand": "echo 'Initializing dev container...'",
-  "postCreateCommand": "bash .devcontainer/setup-simple.sh",
+  "postCreateCommand": "bash .devcontainer/setup-codespaces.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
   "forwardPorts": [
     8000,

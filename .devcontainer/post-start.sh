@@ -42,9 +42,14 @@ fi
 # ------------------------------
 
 echo "✅ Verifying Python environment..."
-if [ -f "/opt/venv/bin/activate" ]; then
-    source /opt/venv/bin/activate
+if [ -f "$HOME/.venv/bin/activate" ]; then
+    source "$HOME/.venv/bin/activate"
     python --version
+    echo "Using virtual environment at: $HOME/.venv"
+elif [ -f "/opt/venv/bin/activate" ]; then
+    source "/opt/venv/bin/activate"
+    python --version
+    echo "Using virtual environment at: /opt/venv"
 else
     echo "⚠️ Virtual environment not found, using system Python"
     python --version

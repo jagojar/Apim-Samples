@@ -30,15 +30,22 @@ REQUIRED_PACKAGES = [
 
 def check_virtual_environment():
     """Check if we're running in the expected virtual environment."""
-    expected_venv = '/opt/venv'
+    import os
+    expected_venv_locations = [
+        os.path.expanduser('~/.venv'),
+        '/opt/venv'
+    ]
+    
     current_prefix = sys.prefix
     
-    if expected_venv in current_prefix:
-        print(f"✅ Running in virtual environment: {current_prefix}")
-        return True
-    else:
-        print(f"❌ Not running in expected virtual environment. Current: {current_prefix}")
-        return False
+    for expected_venv in expected_venv_locations:
+        if expected_venv in current_prefix:
+            print(f"✅ Running in virtual environment: {current_prefix}")
+            return True
+    
+    print(f"❌ Not running in expected virtual environment. Current: {current_prefix}")
+    print(f"Expected one of: {expected_venv_locations}")
+    return False
 
 def check_package_imports():
     """Check if all required packages can be imported."""
@@ -56,6 +63,7 @@ def check_package_imports():
 
 def check_executables():
     """Check if Python executables are correctly configured."""
+    import os
     try:
         python_path = subprocess.check_output(['which', 'python'], text=True).strip()
         pip_path = subprocess.check_output(['which', 'pip'], text=True).strip()
@@ -63,8 +71,17 @@ def check_executables():
         print(f"✅ Python executable: {python_path}")
         print(f"✅ Pip executable: {pip_path}")
         
-        expected_venv = '/opt/venv'
-        return expected_venv in python_path and expected_venv in pip_path
+        expected_venv_locations = [
+            os.path.expanduser('~/.venv'),
+            '/opt/venv'
+        ]
+        
+        for expected_venv in expected_venv_locations:
+            if expected_venv in python_path and expected_venv in pip_path:
+                return True
+        
+        print(f"⚠️ Executables not in expected virtual environment locations: {expected_venv_locations}")
+        return False
     except subprocess.CalledProcessError:
         print("❌ Failed to locate Python or pip executables")
         return False
