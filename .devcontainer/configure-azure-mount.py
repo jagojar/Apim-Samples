@@ -73,8 +73,7 @@ def get_user_choice() -> str:
     # Check if we're in a non-interactive environment (like GitHub Codespaces automation)
     if not sys.stdin.isatty() or os.environ.get('CODESPACES') == 'true':
         print("\nNon-interactive environment detected (GitHub Codespaces).")
-        print("Automatically selecting option 2 (manual login) as the most reliable choice.")
-        print("You can reconfigure later by running this script manually.")
+        print("Automatically selecting option 2 (manual login) as the most reliable choice. You can reconfigure later by running this script manually.\n")
         return "2"
     
     print("\nWaiting for your input...")
@@ -97,27 +96,27 @@ def get_user_choice() -> str:
             return "2"
 
 
-def backup_devcontainer_json() -> bool:
-    """Create a backup of the current devcontainer.json file."""
-    try:
-        backup_path = DEVCONTAINER_JSON_PATH.with_suffix(DEVCONTAINER_JSON_PATH.suffix + BACKUP_SUFFIX)
+# def backup_devcontainer_json() -> bool:
+#     """Create a backup of the current devcontainer.json file."""
+#     try:
+#         backup_path = DEVCONTAINER_JSON_PATH.with_suffix(DEVCONTAINER_JSON_PATH.suffix + BACKUP_SUFFIX)
         
-        if DEVCONTAINER_JSON_PATH.exists():
-            with open(DEVCONTAINER_JSON_PATH, 'r', encoding='utf-8') as src:
-                content = src.read()
+#         if DEVCONTAINER_JSON_PATH.exists():
+#             with open(DEVCONTAINER_JSON_PATH, 'r', encoding='utf-8') as src:
+#                 content = src.read()
             
-            with open(backup_path, 'w', encoding='utf-8') as dst:
-                dst.write(content)
+#             with open(backup_path, 'w', encoding='utf-8') as dst:
+#                 dst.write(content)
             
-            print(f"✅ Backup created: {backup_path}")
-            return True
-        else:
-            print("❌ devcontainer.json not found")
-            return False
+#             print(f"✅ Backup created: {backup_path}")
+#             return True
+#         else:
+#             print("❌ devcontainer.json not found")
+#             return False
             
-    except Exception as e:
-        print(f"❌ Failed to create backup: {e}")
-        return False
+#     except Exception as e:
+#         print(f"❌ Failed to create backup: {e}")
+#         return False
 
 
 def load_devcontainer_json() -> dict:
@@ -162,8 +161,8 @@ def save_devcontainer_json(config: dict) -> bool:
 
 def configure_azure_mount(choice: str) -> bool:
     """Configure Azure CLI mounting based on user choice."""
-    if not backup_devcontainer_json():
-        return False
+    # if not backup_devcontainer_json():
+    #     return False
     
     config = load_devcontainer_json()
     if not config:

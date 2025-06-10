@@ -82,14 +82,34 @@ def check_commands():
     
     for command in REQUIRED_COMMANDS:
         try:
-            subprocess.run([command, '--version'], 
-                          capture_output=True, 
-                          check=True, 
-                          timeout=10)
+            if command == 'jupyter':
+                # Jupyter uses different command syntax
+                subprocess.run([command, '--version'], 
+                              capture_output=True, 
+                              check=True, 
+                              timeout=10)
+            else:
+                subprocess.run([command, '--version'], 
+                              capture_output=True, 
+                              check=True, 
+                              timeout=10)
             print(f"  ✅ {command}")
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-            missing_commands.append(command)
-            print(f"  ❌ {command}")
+            # For Jupyter, try alternative methods
+            if command == 'jupyter':
+                try:
+                    # Try using python -m jupyter
+                    subprocess.run(['python', '-m', 'jupyter', '--version'], 
+                                  capture_output=True, 
+                                  check=True, 
+                                  timeout=10)
+                    print(f"  ✅ {command} (via python -m)")
+                except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                    missing_commands.append(command)
+                    print(f"  ❌ {command}")
+            else:
+                missing_commands.append(command)
+                print(f"  ❌ {command}")
     
     if missing_commands:
         print(f"  ❌ Missing commands: {', '.join(missing_commands)}")
@@ -102,6 +122,7 @@ def check_jupyter_kernel():
     """Check if the custom Jupyter kernel is installed."""
     print("\n📓 Checking Jupyter kernel...")
     try:
+        # Try direct jupyter command first
         result = subprocess.run(['jupyter', 'kernelspec', 'list'], 
                               capture_output=True, 
                               text=True, 
@@ -115,9 +136,25 @@ def check_jupyter_kernel():
             print("  ❌ APIM Samples kernel not found")
             return False
             
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        print("  ❌ Failed to check Jupyter kernels")
-        return False
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        # Try using python -m jupyter if direct command fails
+        try:
+            result = subprocess.run(['python', '-m', 'jupyter', 'kernelspec', 'list'], 
+                                  capture_output=True, 
+                                  text=True, 
+                                  check=True,
+                                  timeout=10)
+            
+            if 'apim-samples' in result.stdout:
+                print("  ✅ APIM Samples kernel found")
+                return True
+            else:
+                print("  ❌ APIM Samples kernel not found")
+                return False
+                
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+            print("  ❌ Failed to check Jupyter kernels")
+            return False
 
 
 def check_azure_cli():
@@ -153,7 +190,7 @@ def check_azure_cli():
 
 def main():
     """Main verification function."""
-    print("🔍 Verifying APIM Samples dev container setup...\n")
+    print("\n🔍 Verifying APIM Samples dev container setup...\n")
     
     checks = [
         check_python_packages(),

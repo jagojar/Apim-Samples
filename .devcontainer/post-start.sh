@@ -6,26 +6,12 @@
 
 echo ""
 echo ""
-echo ""
 echo "🚀 APIM Samples environment starting..."
+echo ""
 
-# Check if this is a prebuild-created environment
+# Check if this is a prebuild-created environment based on the marker set at the end of setup-prebuild.sh.
 if [ -f ".devcontainer/.prebuild-complete" ]; then
     echo "✅ Detected prebuild environment - skipping heavy setup"
-    PREBUILD_ENV=true
-else
-    echo "⚠️ No prebuild detected - running full setup"
-    PREBUILD_ENV=false
-fi
-
-# ------------------------------
-#    INTERACTIVE AZURE SETUP
-# ------------------------------
-
-if [ "$PREBUILD_ENV" = "false" ]; then
-    echo "🔧 Running full setup (no prebuild detected)..."
-    bash .devcontainer/setup.sh
-else
     echo "🔧 Running Azure CLI interactive configuration..."
     
     # Only run the interactive Azure configuration part
@@ -46,25 +32,36 @@ else
         echo "   python3 .devcontainer/configure-azure-mount.py"
         echo ""
     fi
+else
+    echo "⚠️ No prebuild detected - running full setup..."
+    bash .devcontainer/setup.sh
 fi
 
 # ------------------------------
 #    QUICK VERIFICATION
 # ------------------------------
 
-echo " ✅ Verifying Python environment..."
+echo "✅ Verifying Python environment..."
 python --version
 
 echo ""
-echo " ✅ Verifying Azure CLI..."
+echo "✅ Verifying Azure CLI..."
 az --version | head -1
 
 echo ""
-echo " ✅ Verifying Python packages..."
+echo "✅ Verifying Python packages..."
 python -c "import requests, jwt; print('✅ Core packages available')" || echo "⚠️ Some packages may need reinstalling"
 
 echo ""
-echo " ✅ Running environment verification..."
+echo "✅ Ensuring Jupyter is accessible..."
+# Add user local bin to PATH if it exists and jupyter is installed there
+if [ -d "$HOME/.local/bin" ] && [ -f "$HOME/.local/bin/jupyter" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+    echo "Added $HOME/.local/bin to PATH for Jupyter access"
+fi
+
+echo ""
+echo "✅ Running environment verification..."
 python .devcontainer/verify-setup.py
 
 echo ""
@@ -98,4 +95,5 @@ echo "💡 Tip: The Python path has been configured to include shared/python mod
 echo "🔧 To reconfigure Azure CLI authentication, run: python3 .devcontainer/configure-azure-mount.py"
 echo ""
 echo " 🎉 ALL DONE!"
+echo ""
 echo ""
