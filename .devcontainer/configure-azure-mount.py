@@ -96,29 +96,6 @@ def get_user_choice() -> str:
             return "2"
 
 
-# def backup_devcontainer_json() -> bool:
-#     """Create a backup of the current devcontainer.json file."""
-#     try:
-#         backup_path = DEVCONTAINER_JSON_PATH.with_suffix(DEVCONTAINER_JSON_PATH.suffix + BACKUP_SUFFIX)
-        
-#         if DEVCONTAINER_JSON_PATH.exists():
-#             with open(DEVCONTAINER_JSON_PATH, 'r', encoding='utf-8') as src:
-#                 content = src.read()
-            
-#             with open(backup_path, 'w', encoding='utf-8') as dst:
-#                 dst.write(content)
-            
-#             print(f"✅ Backup created: {backup_path}")
-#             return True
-#         else:
-#             print("❌ devcontainer.json not found")
-#             return False
-            
-#     except Exception as e:
-#         print(f"❌ Failed to create backup: {e}")
-#         return False
-
-
 def load_devcontainer_json() -> dict:
     """Load and parse the devcontainer.json file."""
     try:
@@ -161,9 +138,6 @@ def save_devcontainer_json(config: dict) -> bool:
 
 def configure_azure_mount(choice: str) -> bool:
     """Configure Azure CLI mounting based on user choice."""
-    # if not backup_devcontainer_json():
-    #     return False
-    
     config = load_devcontainer_json()
     if not config:
         return False
