@@ -23,8 +23,15 @@ sudo chown vscode:vscode /opt/venv
 # Switch to vscode user for virtual environment creation
 sudo -u vscode bash << 'VENV_SETUP'
 set -e
+echo "Creating virtual environment as vscode user..."
 python -m venv /opt/venv
+
+echo "Activating virtual environment..."
 source /opt/venv/bin/activate
+
+echo "Verifying virtual environment activation..."
+which python
+python --version
 
 echo "📦 Installing Python dependencies in virtual environment..."
 pip install --upgrade pip setuptools wheel
@@ -34,13 +41,17 @@ pip install -r requirements.txt
 pip install pytest pytest-cov coverage
 
 echo "✅ Virtual environment setup complete"
+echo "Python location: $(which python)"
+echo "Pip location: $(which pip)"
 VENV_SETUP
 
 # Activate virtual environment for the rest of the setup
 source /opt/venv/bin/activate
 
 # Make virtual environment available system-wide for the vscode user
+echo 'export PATH="/opt/venv/bin:$PATH"' >> /home/vscode/.bashrc
 echo 'source /opt/venv/bin/activate' >> /home/vscode/.bashrc
+echo 'export PATH="/opt/venv/bin:$PATH"' >> /home/vscode/.zshrc  
 echo 'source /opt/venv/bin/activate' >> /home/vscode/.zshrc
 
 # Set ownership to vscode user (just to be sure)

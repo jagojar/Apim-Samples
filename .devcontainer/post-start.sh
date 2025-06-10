@@ -42,8 +42,13 @@ fi
 # ------------------------------
 
 echo "✅ Verifying Python environment..."
-source /opt/venv/bin/activate
-python --version
+if [ -f "/opt/venv/bin/activate" ]; then
+    source /opt/venv/bin/activate
+    python --version
+else
+    echo "⚠️ Virtual environment not found, using system Python"
+    python --version
+fi
 
 echo ""
 echo "✅ Verifying Azure CLI..."

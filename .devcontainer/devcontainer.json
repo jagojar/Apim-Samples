@@ -61,10 +61,10 @@
   },
   "containerEnv": {
     "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples",
-    "VIRTUAL_ENV": "/opt/venv",
-    "PATH": "/opt/venv/bin:${containerEnv:PATH}"
+    "VIRTUAL_ENV": "/opt/venv"
   },
-  "postCreateCommand": "bash .devcontainer/setup-prebuild.sh",
+  "initializeCommand": "echo 'Initializing dev container...'",
+  "postCreateCommand": "bash .devcontainer/setup-simple.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
   "forwardPorts": [
     8000,
@@ -92,5 +92,8 @@
   },
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/Apim-Samples",
-  "mounts": []
+  "mounts": [],
+  "runArgs": [
+    "--init"
+  ]
 }
