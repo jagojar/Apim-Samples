@@ -38,19 +38,19 @@
         "ms-vscode.vscode-json"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
-        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-        "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
-        "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
-        "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-        "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-        "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
-        "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
-        "python.testing.pytestPath": "/usr/local/py-utils/bin/pytest",
+        "python.formatting.autopep8Path": "/opt/venv/bin/autopep8",
+        "python.formatting.blackPath": "/opt/venv/bin/black",
+        "python.formatting.yapfPath": "/opt/venv/bin/yapf",
+        "python.linting.banditPath": "/opt/venv/bin/bandit",
+        "python.linting.flake8Path": "/opt/venv/bin/flake8",
+        "python.linting.mypyPath": "/opt/venv/bin/mypy",
+        "python.linting.pycodestylePath": "/opt/venv/bin/pycodestyle",
+        "python.linting.pydocstylePath": "/opt/venv/bin/pydocestyle",
+        "python.linting.pylintPath": "/opt/venv/bin/pylint",
+        "python.testing.pytestPath": "/opt/venv/bin/pytest",
         "jupyter.askForKernelRestart": false,
         "jupyter.interactiveWindow.textEditor.executeSelection": true,
         "files.associations": {
@@ -60,9 +60,11 @@
     }
   },
   "containerEnv": {
-    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples"
+    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples",
+    "VIRTUAL_ENV": "/opt/venv",
+    "PATH": "/opt/venv/bin:${containerEnv:PATH}"
   },
-  "onCreateCommand": "bash .devcontainer/setup-prebuild.sh",
+  "postCreateCommand": "bash .devcontainer/setup-prebuild.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
   "forwardPorts": [
     8000,

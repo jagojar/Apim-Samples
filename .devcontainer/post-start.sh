@@ -42,6 +42,7 @@ fi
 # ------------------------------
 
 echo "✅ Verifying Python environment..."
+source /opt/venv/bin/activate
 python --version
 
 echo ""
@@ -72,20 +73,23 @@ echo ""
 #    NEXT STEPS GUIDANCE
 # ------------------------------
 
+echo ""
+echo "==================================================================================================="
+echo ""
 echo "📋 Next steps:"
 echo ""
 if [ -f ".devcontainer/devcontainer.json" ] && grep -q '"mounts"' .devcontainer/devcontainer.json; then
     echo " ✅ Azure CLI config mounting detected - your authentication should be available"
     echo ""
-    echo "1. Verify Azure access and ensure correct tenant/subscription: az account show"
-    echo "2. If needed, switch tenant: az login --tenant <your-tenant-id-or-domain>"
-    echo "3. If needed, set subscription: az account set --subscription <your-subscription-id-or-name>"
+    echo "1. Verify Azure correct tenant/subscription   : az account show"
+    echo "2. If needed, switch tenant                   : az login --tenant <your-tenant-id-or-domain>"
+    echo "3. If needed, set subscription                : az account set --subscription <your-subscription-id-or-name>"
     echo "4. Execute shared/jupyter/verify-az-account.ipynb to verify your Azure setup"
 else
     echo ""
-    echo "1. Sign in to your specific Azure tenant: az login --tenant <your-tenant-id-or-domain>"
-    echo "2. Set your target subscription: az account set --subscription <your-subscription-id-or-name>"
-    echo "3. Verify your context: az account show"
+    echo "1. Sign in to your specific Azure tenant      : az login --tenant <your-tenant-id-or-domain>"
+    echo "2. Set your target subscription               : az account set --subscription <your-subscription-id-or-name>"
+    echo "3. Verify your context                        : az account show"
     echo "4. Execute shared/jupyter/verify-az-account.ipynb to verify your Azure setup"
 fi
 echo "5. Navigate to any infrastructure folder and run the create.ipynb notebook"
