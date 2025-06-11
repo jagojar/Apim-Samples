@@ -1,248 +1,222 @@
-# Dev Container for APIM Samples
+# APIM Samples Dev Container Setup
 
-This directory contains the GitHub Dev Container configuration for the APIM Samples repository, providing a complete development environment with all necessary prerequisites.
+This directory contains the optimized dev container configuration for the Azure API Management (APIM) Samples project. The setup is designed for fast startup times through prebuild optimization while maintaining a robust development environment.
 
-## 🚀 Quick Start
+## 📋 Table of Contents
 
-### Using GitHub Codespaces (Recommended)
+- [Overview](#overview)
+- [Files in this Directory](#files-in-this-directory)
+- [Setup Stages](#setup-stages)
+- [Optimization Strategy](#optimization-strategy)
+- [Jupyter Kernel Configuration](#jupyter-kernel-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Performance Notes](#performance-notes)
 
-This repository is optimized for GitHub Codespaces prebuilds, which significantly reduces startup time:
+## 🎯 Overview
 
-1. Navigate to the repository on GitHub
-2. Click the green "Code" button
-3. Select "Codespaces" tab
-4. Click "Create codespace on main"
-5. The prebuild will provide a fast startup experience
-6. Run the interactive Azure CLI configuration when prompted
+The dev container uses a **three-stage optimization approach** to minimize startup time:
 
-### Prebuild Optimization
+1. **Build Stage** (Dockerfile): Base system setup and Azure CLI configuration
+2. **Prebuild Stage** (devcontainer.json): Heavy installations and environment setup
+3. **Runtime Stage** (post-start-setup.sh): Fast verification and user guidance
 
-The dev container is configured with the following optimization strategy:
+This approach ensures that time-consuming operations happen during container prebuild rather than every startup.
 
-- **`onCreateCommand`**: Runs during prebuild creation, installing packages, dependencies, and setting up the environment
-- **`postStartCommand`**: Runs when starting a codespace from prebuild, handling only interactive configuration and verification
+## 📁 Files in this Directory
 
-This approach ensures:
-- Fast codespace creation (leverages prebuild)
-- Minimal setup time on codespace start
-- Interactive Azure CLI configuration when needed
+### Core Configuration Files
 
-### Using VS Code Dev Containers
+| File | Purpose | Stage |
+|------|---------|-------|
+| `devcontainer.json` | Main dev container configuration | All |
+| `Dockerfile` | Container image definition | Build |
+| `post-start-setup.sh` | Runtime verification script | Runtime |
+| `README.md` | This documentation | - |
 
-1. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. Open the repository in VS Code
-3. When prompted, click "Reopen in Container" or use Command Palette: "Dev Containers: Reopen in Container"
-4. Wait for the container to build and initialize
+### Configuration Details
 
-## 📦 What's Included
+#### `devcontainer.json`
+- **Features**: Azure CLI, common utilities, Git, Docker-in-Docker
+- **Extensions**: Python, Jupyter, Bicep, GitHub Copilot, and more
+- **Lifecycle Commands**: Optimized three-stage setup
+- **Port Forwarding**: Common development ports (3000, 5000, 8000, 8080)
 
-### Core Tools
-- **Python 3.12** - Primary development runtime
-- **Azure CLI** - Latest version with useful extensions pre-installed
-- **Git** - Version control with enhanced configuration
+#### `Dockerfile`
+- **Base Image**: Microsoft's Python 3.12 dev container
+- **System Dependencies**: Essential packages and tools
+- **Azure CLI Setup**: Extensions and configuration for Codespaces
+- **Virtual Environment**: Auto-activation configuration
 
-### VS Code Extensions
-- **Python** - Full Python development support
-- **Jupyter** - Complete Jupyter notebook support with renderers and tools
-- **Azure Bicep** - Infrastructure as Code support
-- **Azure CLI Tools** - Enhanced Azure development experience
-- **GitHub Copilot** - AI-powered coding assistance (if licensed)
-- **YAML & JSON** - Configuration file support
+#### `post-start-setup.sh`
+- **Environment Verification**: Quick checks and status reporting
+- **Fallback Installation**: Safety net for missing components
+- **User Guidance**: Next steps and helpful information
 
-### Python Packages
-All packages from `requirements.txt` are pre-installed:
-- `requests` - HTTP library
-- `pandas` - Data manipulation
-- `matplotlib` - Data visualization
-- `pyjwt` - JWT token handling
-- `pytest` & `pytest-cov` - Testing framework
-- `azure.storage.blob` & `azure.identity` - Azure SDK components
-- `jupyter`, `ipykernel`, `notebook` - Jupyter notebook support
+## 🚀 Setup Stages
 
-### Environment Configuration
-- **PYTHONPATH** - Automatically configured to include shared Python modules
-- **Jupyter Kernel** - Custom kernel named "APIM Samples Python"
-- **Azure CLI** - Installed and ready for authentication (requires tenant-specific `az login` inside container)
-- **Port Forwarding** - Common development ports (3000, 5000, 8000, 8080) pre-configured
+### Stage 1: Container Build (Dockerfile)
+**When it runs**: During initial container build
+**What it does**:
+- Installs Python 3.12 and system dependencies
+- Configures Azure CLI for Codespaces (device code authentication)
+- Installs Azure CLI extensions (`containerapp`, `front-door`)
+- Sets up shell auto-activation for virtual environment
 
-## 🔧 Post-Setup Steps
+### Stage 2: Content Update (devcontainer.json)
+**When it runs**: During prebuild when content changes
+**What it does**:
+- Creates Python virtual environment
+- Installs all Python packages from `requirements.txt`
+- Generates environment configuration (`.env` file)
+- Registers Jupyter kernel
+- Configures Azure CLI settings
 
-The dev container automatically handles most setup during initialization. During the first build, you'll be prompted to configure Azure CLI authentication.
+### Stage 3: Runtime Verification (post-start-setup.sh)
+**When it runs**: Every time the container starts
+**What it does**:
+- Verifies environment setup (< 10 seconds)
+- Provides status reporting and user guidance
+- Performs fallback installation if needed
+- Displays next steps for the user
 
-### Automated Interactive Setup (During First Build)
-When the container starts for the first time, the setup script will automatically:
-1. **Install all dependencies** (Python packages, Azure CLI extensions)
-2. **Configure Jupyter environment** with custom kernel
-3. **Prompt for Azure CLI configuration**:
-   - Mount local Azure config (preserves login between rebuilds)
-   - Use manual login (run tenant-specific `az login` each time)
-   - Configure manually later
+## ⚡ Optimization Strategy
 
-### Manual Configuration (If Needed Later)
-If you skipped the initial configuration or want to change it:
+### What Moved to Prebuild
+- ✅ Python package installation
+- ✅ Virtual environment creation
+- ✅ Azure CLI extension installation
+- ✅ Jupyter kernel registration
+- ✅ Environment file generation
 
-**Interactive Setup**:
+### What Stays in Runtime
+- ✅ Environment verification
+- ✅ Status reporting and user guidance
+- ✅ Fallback installation (safety net)
+- ✅ Performance timing and completion messages
+
+### Performance Benefits
+- **Faster Startup**: Most heavy operations happen during prebuild
+- **Better UX**: Users see verification instead of installation progress
+- **Reliability**: Fallback mechanisms ensure robustness
+- **Transparency**: Clear status reporting throughout
+
+## 🔧 Jupyter Kernel Configuration
+
+The dev container is configured with a custom Jupyter kernel for optimal Python development experience:
+
+- **Kernel Name**: `apim-samples`
+- **Display Name**: "APIM Samples Python 3.12"
+- **Python Path**: `/workspaces/Apim-Samples/.venv/bin/python`
+
+### Kernel Registration Details
+The kernel is automatically registered during the prebuild stage using:
 ```bash
-python .devcontainer/configure-azure-mount.py
+python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python 3.12"
 ```
 
-**Manual Azure Login**:
+### VS Code Kernel Configuration
+The `devcontainer.json` includes specific Jupyter settings to ensure proper kernel selection:
+
+```jsonc
+"jupyter.kernels.excludePythonEnvironments": [
+    // Excludes system Python environments
+],
+"jupyter.kernels.trusted": [
+    "/workspaces/Apim-Samples/.venv/bin/python"
+]
+```
+
+For more details on kernel configuration in VS Code, see: [VS Code Issue #130946](https://github.com/microsoft/vscode/issues/130946#issuecomment-1899389049)
+
+## 🛠️ Troubleshooting
+
+### Common Issues and Solutions
+
+#### Virtual Environment Not Found
+**Symptom**: Error about missing virtual environment
+**Solution**: The virtual environment should be created during prebuild. If missing:
 ```bash
-# Log in to your specific tenant
-az login --tenant <your-tenant-id-or-domain>
-
-# Set your target subscription
-az account set --subscription <your-subscription-id-or-name>
-
-# Verify your authentication context
-az account show
+python3.12 -m venv /workspaces/Apim-Samples/.venv
+source /workspaces/Apim-Samples/.venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### Continue with Development
-After setup is complete:
-1. **Verify your Azure setup**: Execute `shared/jupyter/verify-az-account.ipynb`
-2. **Test your environment**: Run `python .devcontainer/verify-setup.py`
-3. **Start exploring**:
-   - Navigate to any infrastructure folder (`infrastructure/`)
-   - Run the `create.ipynb` notebook to set up infrastructure
-   - Explore samples in the `samples/` directory
-
-## 🔧 Troubleshooting
-
-If you encounter import errors or module resolution issues, see:
-- [Import Troubleshooting Guide](.devcontainer/IMPORT-TROUBLESHOOTING.md)
-- [Setup Notes](.devcontainer/SETUP-NOTES.md)
-
-Common quick fixes:
+#### Azure CLI Extensions Missing
+**Symptom**: Commands fail with extension not found
+**Solution**: Extensions should install during prebuild. If missing:
 ```bash
-# Fix Python path for local development
-python setup/setup_python_path.py --generate-env
-
-# Verify setup
-python .devcontainer/verify-setup.py
-
-# Rebuild dev container if needed
-Dev Containers: Rebuild Container
+az extension add --name containerapp
+az extension add --name front-door
 ```
 
-## 🏗️ Architecture
-
-The dev container is built on:
-- **Base Image**: `mcr.microsoft.com/devcontainers/python:1-3.12-bullseye`
-- **Features**: Azure CLI, Common utilities with Zsh/Oh My Zsh
-- **Workspace**: Mounted at `/workspaces/Apim-Samples`
-- **User**: `vscode` with proper permissions
-
-## 🔄 Azure CLI Authentication
-
-### Quick Setup (Recommended)
-
-Run the interactive configuration script to automatically set up Azure CLI authentication for your platform:
-
-**Python (Cross-platform)**:
+#### Jupyter Kernel Not Available
+**Symptom**: Kernel not visible in VS Code
+**Solution**: Re-register the kernel:
 ```bash
-python .devcontainer/configure-azure-mount.py
+python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python 3.12"
 ```
 
-**PowerShell (Windows)**:
-```powershell
-.\.devcontainer\configure-azure-mount.ps1
-```
-
-**Bash (Linux/macOS)**:
-```bash
-./.devcontainer/configure-azure-mount.sh
-```
-
-### Configuration Options
-
-The setup script provides three choices:
-
-**Option 1: Mount local Azure CLI config**
-- ✅ Preserves login between container rebuilds
-- ✅ Uses your existing tenant-specific `az login` from host machine
-- ✅ Works on Windows (`${localEnv:USERPROFILE}/.azure`) and Unix (`${localEnv:HOME}/.azure`)
-- ✅ Best for: Personal development with stable logins
-
-**Option 2: Use manual login inside container [RECOMMENDED]**
-- ✅ Run tenant-specific `az login` each time container starts
-- ✅ More secure, fresh authentication each session  
-- ✅ Works universally across all platforms and environments
-- ✅ Best for: Shared environments, GitHub Codespaces
-- ✅ Ensures you're working with the correct tenant and subscription
-
-**Option 3: Configure manually later**
-- ✅ No changes made to devcontainer.json
-- ✅ You can edit the configuration files yourself
-- ✅ Full control over mount configuration
-
-### Mount Preservation
-
-The configuration script intelligently preserves any existing mounts (like SSH keys, additional volumes) while only managing Azure CLI mounts. This ensures your custom development setup remains intact.
-
-### Non-Interactive Environments
-
-In environments like GitHub Codespaces automation, the script automatically detects non-interactive contexts and safely defaults to Option 2 (manual login) for maximum reliability.
-
-### Manual Options
-
-**Option 1: Mount Local Azure Config**
-- Preserves authentication between container rebuilds
-- Platform-specific (configured automatically by the setup script)
-
-**Option 2: Manual Login**
-- Log in to your specific tenant: `az login --tenant <your-tenant-id-or-domain>`
-- Set your target subscription: `az account set --subscription <your-subscription-id-or-name>`
-- Verify context: `az account show`
-- Works universally across all platforms
-- Requires re-authentication after container rebuilds
-
-## 🐛 Troubleshooting
-
-### Container Creation Failed with ipykernel Error
-If you see an error like `/usr/local/bin/python: No module named ipykernel`:
-1. This has been fixed in the latest version
-2. If you're still experiencing issues, manually rebuild the container:
-   - Command Palette → "Dev Containers: Rebuild Container"
-3. Or run the manual setup:
-   ```bash
-   pip install ipykernel jupyter notebook
-   python -m ipykernel install --user --name=apim-samples --display-name="APIM Samples Python"
-   ```
-
-### Python Path Issues
-If you encounter import errors:
+#### Environment Variables Not Set
+**Symptom**: Import errors or path issues
+**Solution**: Regenerate the `.env` file:
 ```bash
 python setup/setup_python_path.py --generate-env
 ```
 
-### Jupyter Kernel Not Found
-Restart VS Code or refresh the Jupyter kernel list:
-- Command Palette → "Jupyter: Refresh Kernels"
-- Or manually check available kernels: `jupyter kernelspec list`
+### Debug Commands
+Useful commands for troubleshooting:
 
-### Azure CLI Issues
-Check Azure CLI status:
 ```bash
-az account show
-az account list
+# Check Python environment
+which python
+python --version
+pip list
+
+# Check virtual environment
+echo $VIRTUAL_ENV
+source /workspaces/Apim-Samples/.venv/bin/activate
+
+# Check Azure CLI
+az --version
+az extension list
+
+# Check Jupyter kernels
+jupyter kernelspec list
+
+# Verify environment file
+cat .env
 ```
 
-### Container Rebuild
-If you need to rebuild the container:
-- Command Palette → "Dev Containers: Rebuild Container"
+## 📊 Performance Notes
 
-## 🔒 Security Considerations
+### Typical Timing
+- **First Build**: ~5-10 minutes (includes all prebuild operations)
+- **Subsequent Startups**: ~10-30 seconds (verification only)
+- **Content Updates**: ~2-5 minutes (package updates during prebuild)
 
-- Azure credentials are handled through tenant-specific `az login` inside the container (or optionally mounted)
-- The container runs as a non-root user (`vscode`)
-- All dependencies are installed from official sources
-- Network access is controlled through VS Code's port forwarding
+### Monitoring Setup Progress
+The post-start script provides real-time feedback:
+- **Terminal Output**: Keep the initial terminal open to see progress
+- **Status Messages**: Clear indicators for each verification step
+- **Error Handling**: Detailed messages for any issues encountered
+
+### Best Practices
+1. **Keep Initial Terminal Open**: Shows verification progress and status
+2. **Wait for Completion**: Let the verification finish before starting work
+3. **Check Status Messages**: Review any warnings or errors reported
+4. **Use Fallback Commands**: If something fails, the script provides guidance
+
+---
 
 ## 🤝 Contributing
 
-When modifying the dev container configuration:
-1. Test changes locally first
-2. Update this README if adding new tools or changing behavior
-3. Consider backward compatibility for existing users
-4. Document any new environment variables or configuration options
+When modifying the dev container setup:
+
+1. **Test Thoroughly**: Verify changes work in both fresh and existing containers
+2. **Update Documentation**: Keep this README current with any changes
+3. **Consider Performance**: Evaluate whether new operations belong in prebuild or runtime
+4. **Maintain Fallbacks**: Ensure robust error handling and recovery options
+
+---
+
+*This dev container configuration is optimized for Azure API Management samples development with fast startup times and comprehensive tooling support.*
