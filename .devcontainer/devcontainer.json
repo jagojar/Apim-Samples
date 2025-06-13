@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
   "name": "APIM Samples",
   "build": {
     "dockerfile": "Dockerfile",
@@ -67,20 +68,20 @@
         "jupyter.interactiveWindow.textEditor.executeSelection": true,
         "jupyter.notebookFileRoot": "${workspaceFolder}",
         "jupyter.kernels.excludePythonEnvironments": [
-            "**/anaconda3/**",
-            "**/conda/**",
-            "**/miniconda3/**",
-            "**/python3.*",
-            "*/site-packages/*",
-            "/bin/python",
-            "/bin/python3",
-            "/opt/python/*/bin/python*",
-            "/usr/bin/python",
-            "/usr/bin/python3",
-            "/usr/local/bin/python",
-            "/usr/local/bin/python3",
-            "python",
-            "python3"
+          "**/anaconda3/**",
+          "**/conda/**",
+          "**/miniconda3/**",
+          "**/python3.*",
+          "*/site-packages/*",
+          "/bin/python",
+          "/bin/python3",
+          "/opt/python/*/bin/python*",
+          "/usr/bin/python",
+          "/usr/bin/python3",
+          "/usr/local/bin/python",
+          "/usr/local/bin/python3",
+          "python",
+          "python3"
         ],
         "jupyter.kernels.trusted": [
           "/workspaces/Apim-Samples/.venv/bin/python"
@@ -88,7 +89,6 @@
         "files.associations": {
           "*.bicep": "bicep"
         },
-        // Auto-show terminal output during codespace startup
         "terminal.integrated.showExitAlert": false,
         "terminal.integrated.focusAfterRun": "terminal",
         "terminal.integrated.defaultProfile.linux": "bash",
@@ -98,35 +98,34 @@
         "workbench.startupEditor": "none",
         "workbench.panel.defaultPanelHeight": 400,
         "workbench.view.alwaysShowHeaderActions": true,
-        // Auto-open terminal panel on startup
         "workbench.action.terminal.focus": true,
         "workbench.action.togglePanel": true,
         "terminal.integrated.defaultLocation": "view",
-        // Auto-allow clipboard operations in Codespaces
         "security.workspace.trust.enabled": false,
         "editor.experimental.pasteActions.enabled": true,
         "workbench.editor.enablePreview": false
       }
+    },
+    "containerEnv": {
+      "PATH": "/workspaces/Apim-Samples/.venv/bin:${PATH}",
+      "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples",
+      "VIRTUAL_ENV": "/workspaces/Apim-Samples/.venv"
     }
   },
-  "containerEnv": {
-    "PYTHONPATH": "/workspaces/Apim-Samples/shared/python:/workspaces/Apim-Samples"
-  },
-  // Container lifecycle commands for optimal Codespaces prebuild performance: https://containers.dev/implementors/features/#lifecycle-hooks
-  // 1. onCreateCommand: Runs only once during initial prebuild - creates venv
-  // 2. updateContentCommand: Runs during any prebuild when content changes - installs/updates packages
-  // 3. postStartCommand: Runs on every startup - verifies and configures
   "onCreateCommand": [
-    "bash", "-c", 
-    "echo '🚀 Creating Python virtual environment in workspace...' && /usr/local/bin/python3.12 -m venv /workspaces/Apim-Samples/.venv --copies && source /workspaces/Apim-Samples/.venv/bin/activate && pip install --upgrade pip setuptools wheel && echo '✅ Virtual environment created'"
+    "bash",
+    "-c",
+    "echo '🚀 Creating Python virtual environment in workspace...' && /usr/local/bin/python3.12 -m venv /workspaces/Apim-Samples/.venv --copies && source /workspaces/Apim-Samples/.venv/bin/activate && pip install --upgrade pip setuptools wheel ipykernel && echo '✅ Virtual environment created' && echo '🔧 Registering Jupyter kernel during prebuild...' && python -m ipykernel install --user --name=apim-samples --display-name='APIM Samples Python 3.12' && echo '🧹 Removing default python3 kernel...' && rm -rf /workspaces/Apim-Samples/.venv/share/jupyter/kernels/python3 2>/dev/null || true && echo '✅ Jupyter kernel registered in prebuild'"
   ],
   "updateContentCommand": [
-    "bash", "-c",
-    "echo '📦 Installing/updating Python packages from requirements.txt...' && source /workspaces/Apim-Samples/.venv/bin/activate && pip install -r requirements.txt && pip install pytest pytest-cov coverage ipykernel && echo '✅ Python packages installed/updated' && python setup/setup_python_path.py --generate-env && echo '✅ Environment configuration updated' && echo '🔧 Registering Jupyter kernel...' && python -m ipykernel install --user --name=apim-samples --display-name='APIM Samples Python 3.12' && echo '✅ Jupyter kernel registered' && echo '⚙️ Configuring Azure CLI...' && az config set core.login_experience_v2=off 2>/dev/null || true && az extension add --name containerapp --only-show-errors 2>/dev/null || true && az extension add --name front-door --only-show-errors 2>/dev/null || true && echo '✅ Azure CLI configured for Codespaces'"
+    "bash",
+    "-c",
+    "echo '📦 Installing/updating Python packages from requirements.txt...' && source /workspaces/Apim-Samples/.venv/bin/activate && pip install -r requirements.txt && pip install pytest pytest-cov coverage && echo '✅ Python packages installed/updated' && python setup/setup_python_path.py --generate-env && echo '✅ Environment configuration updated' && echo '⚙️ Configuring Azure CLI...' && az config set core.login_experience_v2=off 2>/dev/null || true && az extension add --name containerapp --only-show-errors 2>/dev/null || true && az extension add --name front-door --only-show-errors 2>/dev/null || true && echo '✅ Azure CLI configured for Codespaces'"
   ],
   "postStartCommand": [
-    "bash", "-c", 
-    "echo '� APIM Samples Codespace Starting - Keep this terminal open to see progress!' && echo '============================================================' && bash .devcontainer/post-start-setup.sh && echo '============================================================' && echo '✅ Setup completed! This terminal will remain open for your reference.' && echo '💡 Tip: You can minimize this panel if needed, but the setup logs above show your environment status.' && sleep 2"
+    "bash",
+    "-c",
+    "echo 'APIM Samples Codespace Starting - Keep this terminal open to see progress!' && bash .devcontainer/post-start-setup.sh"
   ],
   "forwardPorts": [
     8000,

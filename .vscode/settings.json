@@ -44,8 +44,6 @@
     "terminal.integrated.env.windows": {
         "PATH": "${env:PATH}"
     },
-    
-    // Auto-show terminal during Codespace startup
     "terminal.integrated.showExitAlert": false,
     "terminal.integrated.focusAfterRun": "terminal",
     "terminal.integrated.defaultProfile.linux": "bash",
@@ -55,9 +53,6 @@
     "workbench.view.alwaysShowHeaderActions": true,
     "terminal.integrated.tabs.enabled": true,
     "terminal.integrated.tabs.location": "left",
-    "workbench.editor.showTabs": "single",
-    
-      // XML and APIM Policy Configuration - Conservative formatting to preserve policy expressions
     "xml.validation.enabled": false,
     "xml.validation.namespaces.enabled": "never",
     "xml.validation.schema.enabled": "never",
@@ -86,8 +81,6 @@
     "xml.codeLens.enabled": false,
     "xml.preferences.includeSchemaAssociations": "never",
     "xml.trace.server": "off",
-    
-    // File associations for APIM policies
     "files.associations": {
         "*.xml": "xml",
         "**/apim-policies/*.xml": "xml",
@@ -95,14 +88,9 @@
         "pf-*.xml": "xml",
         "hr_*.xml": "xml"
     },
-    
-    // Disable HTML validation for XML files
     "html.validate": false,
-    
-    // APIM specific settings - let the APIM extension handle validation
     "azureApiManagement.policies.validateSyntax": true,
     "azureApiManagement.policies.showCodeLens": true,
-      // Language mode overrides for APIM policy files - DISABLE FORMATTING TO PRESERVE POLICY EXPRESSIONS
     "[xml]": {
         "editor.quickSuggestions": {
             "other": true,
