@@ -155,3 +155,4 @@ module apisModule '../../shared/bicep/modules/apim/v1/api.bicep' = [for api in a
 output apimServiceId string = apimService.id
 output apimServiceName string = apimService.name
 output apimResourceGatewayURL string = apimService.properties.gatewayUrl
+output spotifyOAuthRedirectUrl string = spotifyAuthorizationProvider.properties.oauth2.redirectUrl

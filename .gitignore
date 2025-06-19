@@ -22,7 +22,7 @@ labs-in-progress/
 *.log
 
 # Exclude sensitive or generated files
-.env
+.env*
 
 # Coverage data and reports
 .coverage

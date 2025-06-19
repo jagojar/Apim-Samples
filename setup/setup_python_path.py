@@ -99,6 +99,8 @@ def generate_env_file() -> None:
     env_content = f"""# Auto-generated PYTHONPATH for VS Code - Run 'python setup/setup_python_path.py' to regenerate
 PROJECT_ROOT={project_root}
 PYTHONPATH={shared_python_path}
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
 """
     
     env_file_path = project_root / '.env'
@@ -109,9 +111,11 @@ PYTHONPATH={shared_python_path}
         f.write(env_content)
     
     print()
-    print(f"Generated .env file : {env_file_path}")
-    print(f"PROJECT_ROOT        : {project_root}")
-    print(f"PYTHONPATH          : {shared_python_path}\n")
+    print(f"Generated .env file   : {env_file_path}")
+    print(f"PROJECT_ROOT          : {project_root}")
+    print(f"PYTHONPATH            : {shared_python_path}")
+    print(f"SPOTIFY_CLIENT_ID     : ")
+    print(f"SPOTIFY_CLIENT_SECRET : \n")
 
 
 def install_jupyter_kernel():
