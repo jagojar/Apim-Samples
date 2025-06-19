@@ -286,3 +286,7 @@ The APIM team maintains an [APIM policy snippets repo](https://github.com/Azure/
 This project has its roots in work done by [Alex Vieira](https://github.com/vieiraae) on the excellent Azure API Management [AI Gateway](https://github.com/Azure-Samples/AI-Gateway) GitHub repository. Much of the structure is similar and its reuse resulted in significant time savings. Thank you, Alex!
 
 Furthermore, [Houssem Dellai](https://github.com/HoussemDellai) was instrumental in setting up a working Front Door to API Management [private connectivity lab](https://github.com/Azure-Samples/AI-Gateway/tree/main/labs/private-connectivity). This created a working baseline for one of this repository's infrastructures. Thank you, Houssem!
+
+[Andrew Redman](https://github.com/anotherRedbeard) for contributing the _Azure Maps_ sample.
+
+The original author of this project is [Simon Kurtz](https://github.com/simonkurtz-msft).
