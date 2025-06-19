@@ -147,6 +147,7 @@ For detailed troubleshooting of setup issues, see [Import Troubleshooting Guide]
 | [Load Balancing](./samples/load-balancing/README.md)                     | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
 | [Secure Blob Access](./samples/secure-blob-access/README.md)             | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
 | [Credential Manager (with Spotify)](./samples/oauth-3rd-party/README.md) | Authenticate with APIM which then uses its Credential Manager with Spotify's REST API.                              | All infrastructures           |
+| [Azure Maps](./samples/azure-maps/README.md)                             | Proxying calls to Azure Maps with APIM policies.                                                                    | All infrastructures           |
 
 ### ▶️ Running a Sample
 

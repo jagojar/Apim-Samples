@@ -60,7 +60,8 @@ resource apimApi 'Microsoft.ApiManagement/service/apis@2024-06-01-preview' = {
     path: api.path
     protocols: [
       'https'
-    ]   
+    ]
+    serviceUrl: contains(api, 'serviceUrl') && !empty(api.serviceUrl) ? api.serviceUrl : null
     subscriptionKeyParameterNames: {
       header: 'api-key'
       query: 'api-key'
