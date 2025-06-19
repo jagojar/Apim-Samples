@@ -16,6 +16,28 @@ _Try it out, learn from it, apply it in your setups._
 
 ---
 
+## 📁 List of Infrastructures
+
+| Infrastructure Name                                                               | Description                                                                                                                                                           |
+|:----------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Simple API Management](./infrastructure/simple-apim)                             | Just the basics with a publicly accessible API Management instance fronting your APIs. This is the innermost way to experience and experiment with the APIM policies. |
+| [API Management & Container Apps](./infrastructure/apim-aca)                      | APIs are often implemented in containers running in Azure Container Apps. This architecture accesses the container apps publicly. It's beneficial to test both APIM and container app URLs here to contrast and compare experiences of API calls through and bypassing APIM. It is not intended to be a security baseline. |
+| [Secure Front Door & API Management & Container Apps](./infrastructure/afd-apim)  | A higher-fidelity implementation of a secured setup in which Azure Front Door connects to APIM via the new private link integration. This traffic, once it traverses through Front Door, rides entirely on Microsoft-owned and operated networks. Similarly, the connection from APIM to Container Apps is secured but through a VNet configuration (it is also entirely possible to do this via private link). APIM Standard V2 is used here to accept a private link from Front Door. |
+
+## 📁 List of Samples
+
+| Sample Name                                                              | Description                                                                                                         | Supported Infrastructure(s)   |
+|:-------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:------------------------------|
+| [AuthX](./samples/authX/README.md)                                       | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
+| [AuthX Pro](./samples/authX-pro/README.md)                               | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
+| [General](./samples/general/README.md)                                   | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
+| [Load Balancing](./samples/load-balancing/README.md)                     | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
+| [Secure Blob Access](./samples/secure-blob-access/README.md)             | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
+| [Credential Manager (with Spotify)](./samples/oauth-3rd-party/README.md) | Authenticate with APIM which then uses its Credential Manager with Spotify's REST API.                              | All infrastructures           |
+| [Azure Maps](./samples/azure-maps/README.md)                             | Proxying calls to Azure Maps with APIM policies.                                                                    | All infrastructures           |
+
+---
+
 ## 🚀 Getting Started
 
 ### Quick Start Options
@@ -137,18 +159,6 @@ For detailed troubleshooting of setup issues, see [Import Troubleshooting Guide]
 
 📘 **For comprehensive troubleshooting including deployment errors, authentication issues, and more, see our main [Troubleshooting Guide](TROUBLESHOOTING.md).**
 
-### 📁 List of Samples
-
-| Sample Name                                                              | Description                                                                                                         | Supported Infrastructure(s)   |
-|:-------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|:------------------------------|
-| [AuthX](./samples/authX/README.md)                                       | Authentication and role-based authorization in a mock HR API.                                                       | All infrastructures           |
-| [AuthX Pro](./samples/authX-pro/README.md)                               | Authentication and role-based authorization in a mock product with multiple APIs and policy fragments.              | All infrastructures           |
-| [General](./samples/general/README.md)                                   | Basic demo of APIM sample setup and policy usage.                                                                   | All infrastructures           |
-| [Load Balancing](./samples/load-balancing/README.md)                     | Priority and weighted load balancing across backends.                                                               | apim-aca, afd-apim (with ACA) |
-| [Secure Blob Access](./samples/secure-blob-access/README.md)             | Secure blob access via the [valet key pattern](https://learn.microsoft.com/azure/architecture/patterns/valet-key).  | All infrastructures           |
-| [Credential Manager (with Spotify)](./samples/oauth-3rd-party/README.md) | Authenticate with APIM which then uses its Credential Manager with Spotify's REST API.                              | All infrastructures           |
-| [Azure Maps](./samples/azure-maps/README.md)                             | Proxying calls to Azure Maps with APIM policies.                                                                    | All infrastructures           |
-
 ### ▶️ Running a Sample
 
 1. Locate the specific sample's `create.ipynb` file and adjust the parameters under the `User-defined Parameters` header as you see fit.
@@ -195,14 +205,6 @@ For immediate help with common errors, diagnostic commands, and step-by-step sol
 ### 🏛️ Infrastructure Architectures
 
 We provide several common architectural approaches to integrating APIM into your Azure ecosystem. While these are high-fidelity setups, they are not production-ready. Please refer to the [Azure API Management landing zone accelerator](https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/app-platform/api-management/landing-zone-accelerator) for up-to-date production setups.
-
-## 📦 List of Infrastructures
-
-| Infrastructure Name                                                               | Description                                                                                                                                                           |
-|:----------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Simple API Management](./infrastructure/simple-apim)                             | Just the basics with a publicly accessible API Management instance fronting your APIs. This is the innermost way to experience and experiment with the APIM policies. |
-| [API Management & Container Apps](./infrastructure/apim-aca)                      | APIs are often implemented in containers running in Azure Container Apps. This architecture accesses the container apps publicly. It's beneficial to test both APIM and container app URLs here to contrast and compare experiences of API calls through and bypassing APIM. It is not intended to be a security baseline. |
-| [Secure Front Door & API Management & Container Apps](./infrastructure/afd-apim)  | A higher-fidelity implementation of a secured setup in which Azure Front Door connects to APIM via the new private link integration. This traffic, once it traverses through Front Door, rides entirely on Microsoft-owned and operated networks. Similarly, the connection from APIM to Container Apps is secured but through a VNet configuration (it is also entirely possible to do this via private link). APIM Standard V2 is used here to accept a private link from Front Door. |
 
 ---
 
