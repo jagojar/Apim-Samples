@@ -79,6 +79,21 @@ resource productPolicy 'Microsoft.ApiManagement/service/products/policies@2024-0
   }
 }
 
+// https://learn.microsoft.com/azure/templates/microsoft.apimanagement/service/subscriptions
+resource productSubscription 'Microsoft.ApiManagement/service/subscriptions@2024-05-01' = if (subscriptionRequired) {
+  name: 'product-${toLower(productName)}'
+  parent: apimService
+  properties: {
+    allowTracing: true
+    displayName: 'Subscription for ${productDisplayName} product'
+    scope: '/products/${productName}'
+    state: 'active'
+  }
+  dependsOn: [
+    product
+  ]
+}
+
 
 // ------------------------------
 //    OUTPUTS
@@ -107,3 +122,15 @@ output policyResourceId string = !empty(policyXml) ? productPolicy.id : ''
 
 @description('Whether a policy is attached to this product.')
 output hasPolicyAttached bool = !empty(policyXml)
+
+@description('The resource ID of the product subscription, if created.')
+output subscriptionResourceId string = subscriptionRequired ? productSubscription.id : ''
+
+@description('The name of the product subscription, if created.')
+output subscriptionName string = subscriptionRequired ? productSubscription.name : ''
+
+@description('The primary key of the product subscription, if created.')
+output subscriptionPrimaryKey string = subscriptionRequired ? listSecrets('${apimService.id}/subscriptions/product-${toLower(productName)}', '2024-05-01').primaryKey : ''
+
+@description('The secondary key of the product subscription, if created.')
+output subscriptionSecondaryKey string = subscriptionRequired ? listSecrets('${apimService.id}/subscriptions/product-${toLower(productName)}', '2024-05-01').secondaryKey : ''

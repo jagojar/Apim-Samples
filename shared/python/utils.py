@@ -2,6 +2,7 @@
 Module providing utility functions.
 """
 
+import ast
 import datetime
 import json
 import os
@@ -16,7 +17,7 @@ import base64
 import inspect
 from pathlib import Path
 
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from apimtypes import APIM_SKU, HTTP_VERB, INFRASTRUCTURE
 
 
@@ -152,6 +153,74 @@ class Output(object):
 
             return None
 
+    def getJson(self, key: str, label: str = '', secure: bool = False) -> Any:
+        """
+        Retrieve a deployment output property by key and return it as a JSON object.
+        This method is independent from get() and retrieves the raw deployment output value.
+
+        Args:
+            key (str): The output key to retrieve.
+            label (str, optional): Optional label for logging.
+            secure (bool, optional): If True, masks the value in logs.
+
+        Returns:
+            Any: The value as a JSON object (dict, list, etc.), or the original value if not JSON, or None if not found.
+        """
+
+        try:
+            if not isinstance(self.json_data, dict):
+                raise KeyError("json_data is not a dict")
+
+            if 'properties' in self.json_data:
+                properties = self.json_data.get('properties')
+                if not isinstance(properties, dict):
+                    raise KeyError("'properties' is not a dict in deployment result")
+
+                outputs = properties.get('outputs')
+                if not isinstance(outputs, dict):
+                    raise KeyError("'outputs' is missing or not a dict in deployment result")
+
+                output_entry = outputs.get(key)
+                if not isinstance(output_entry, dict) or 'value' not in output_entry:
+                    raise KeyError(f"Output key '{key}' not found in deployment outputs")
+
+                deployment_output = output_entry['value']
+            elif key in self.json_data:
+                deployment_output = self.json_data[key]['value']
+
+            if label:
+                if secure and isinstance(deployment_output, str) and len(deployment_output) >= 4:
+                    print_val(label, f"****{deployment_output[-4:]}")
+                else:
+                    print_val(label, deployment_output)
+
+            # If the result is a string, try to parse it as JSON
+            if isinstance(deployment_output, str):
+                # First try JSON parsing (handles double quotes)
+                try:
+                    return json.loads(deployment_output)
+                except json.JSONDecodeError:
+                    pass
+
+                # If JSON fails, try Python literal evaluation (handles single quotes)
+                try:
+                    return ast.literal_eval(deployment_output)
+                except (ValueError, SyntaxError) as e:
+                    print_error(f"Failed to parse deployment output as Python literal. Error: {e}")
+                    pass
+
+            # Return the original result if it's not a string or can't be parsed
+            return deployment_output
+
+        except Exception as e:
+            error = f"Failed to retrieve output property: '{key}'\nError: {e}"
+            print_error(error)
+
+            if label:
+                raise Exception(error)
+
+            return None
+
 
 class NotebookHelper:
     def __init__(self, sample_folder: str, rg_name: str, rg_location: str, deployment: INFRASTRUCTURE, supported_infrastructures = list[INFRASTRUCTURE], use_jwt: bool = False):
@@ -218,7 +287,6 @@ class NotebookHelper:
             raise SystemExit('Deployment failed')
 
         return output
-
 
 
 
@@ -787,7 +855,7 @@ def cleanup_deployment(deployment: str, indexes: int | list[int] | None = None) 
         rg_name = get_rg_name(deployment, idx)
         _cleanup_resources(deployment, rg_name)
 
-def extract_json(text: str) -> any:
+def extract_json(text: str) -> Any:
     """
     Extract the first valid JSON object or array from a string and return it as a Python object.
 
@@ -836,11 +904,21 @@ def is_string_json(text: str) -> bool:
     if not isinstance(text, (str, bytes, bytearray)):
         return False
 
+    # First try JSON parsing (handles double quotes)
     try:
         json.loads(text)
         return True
-    except (ValueError, TypeError):
-        return False
+    except json.JSONDecodeError:
+        pass
+
+    # If JSON fails, try Python literal evaluation (handles single quotes)
+    try:
+        ast.literal_eval(text)
+        return True
+    except (ValueError, SyntaxError):
+        pass
+
+    return False
 
 def get_account_info() -> Tuple[str, str, str]:
     """
@@ -1233,19 +1311,35 @@ def test_url_preflight_check(deployment: INFRASTRUCTURE, rg_name: str, apim_gate
 
 def cleanup_old_jwt_signing_keys(apim_name: str, resource_group_name: str, current_jwt_key_name: str) -> bool:
     """
-    Clean up old JWT signing keys from APIM named values, keeping only the current key.
+    Clean up old JWT signing keys from APIM named values for the same sample folder, keeping only the current key.
+    Uses regex matching to identify keys that belong to the same sample folder by extracting the sample folder
+    name from the current key and matching against the pattern 'JwtSigningKey-{sample_folder}-{timestamp}'.
     
     Args:
         apim_name (str): Name of the APIM service
         resource_group_name (str): Name of the resource group containing APIM
-        current_jwt_key_name (str): Name of the current JWT key to preserve
+        current_jwt_key_name (str): Name of the current JWT key to preserve (format: JwtSigningKey-{sample_folder}-{timestamp})
         
     Returns:
         bool: True if cleanup was successful, False otherwise
     """
     
     try:
-        print_message('🧹 Cleaning up old JWT signing keys...', blank_above = True)
+        import re
+        
+        print_message('🧹 Cleaning up old JWT signing keys for the same sample folder...', blank_above = True)
+        
+        # Extract sample folder name from current JWT key using regex
+        # Pattern: JwtSigningKey-{sample_folder}-{timestamp}
+        current_key_pattern = r'^JwtSigningKey-(.+)-\d+$'
+        current_key_match = re.match(current_key_pattern, current_jwt_key_name)
+        
+        if not current_key_match:
+            print_error(f"Current JWT key name '{current_jwt_key_name}' does not match expected pattern 'JwtSigningKey-{{sample_folder}}-{{timestamp}}'")
+            return False
+        
+        sample_folder = current_key_match.group(1)
+        print_info(f"Identified sample folder: '{sample_folder}'")
         
         # Get all named values that start with 'JwtSigningKey'
         print_info(f"Getting all JWT signing key named values from APIM '{apim_name}'...")
@@ -1267,16 +1361,24 @@ def cleanup_old_jwt_signing_keys(apim_name: str, resource_group_name: str, curre
         # Parse the list of JWT keys
         jwt_keys = [key.strip() for key in output.text.strip().split('\n') if key.strip()]
         
-        print_info(f"Found {len(jwt_keys)} JWT signing keys.")
+        # print_info(f"Found {len(jwt_keys)} total JWT signing keys.")
         
-        # Process each JWT key
+        # Filter keys that belong to the same sample folder using regex
+        sample_key_pattern = rf'^JwtSigningKey-{re.escape(sample_folder)}-\d+$'
+        sample_folder_keys = [key for key in jwt_keys if re.match(sample_key_pattern, key)]
+        
+        print_info(f"Found {len(sample_folder_keys)} JWT signing keys for sample folder '{sample_folder}'.")
+        
+        # Process each JWT key for this sample folder
         deleted_count = 0
         kept_count = 0
         
-        for jwt_key in jwt_keys:
+        for jwt_key in sample_folder_keys:
             if jwt_key == current_jwt_key_name:
+                print_info(f"Keeping current JWT key: {jwt_key}")
                 kept_count += 1
             else:
+                print_info(f"Deleting old JWT key: {jwt_key}")
                 delete_output = run(
                     f'az apim nv delete --service-name "{apim_name}" --resource-group "{resource_group_name}" --named-value-id "{jwt_key}" --yes',
                     f"Deleted old JWT key: {jwt_key}",
@@ -1288,9 +1390,38 @@ def cleanup_old_jwt_signing_keys(apim_name: str, resource_group_name: str, curre
                     deleted_count += 1
         
         # Summary
-        print_success(f"JWT signing key cleanup completed. Deleted {deleted_count} old key(s), kept {kept_count}'.", blank_above = True)
+        print_success(f"JWT signing key cleanup completed for sample '{sample_folder}'. Deleted {deleted_count} old key(s), kept {kept_count}.", blank_above = True)
         return True
         
     except Exception as e:
         print_error(f"Error during JWT key cleanup: {str(e)}")
         return False
+    
+def get_json(input: str) -> Any:
+    """
+    Safely parse a JSON string or file content into a Python object.
+    
+    Args:
+        input (str): The JSON string or file content to parse.
+        
+    Returns:
+        Any: The parsed JSON object, or None if parsing fails.
+    """
+    
+    # If the result is a string, try to parse it as JSON
+    if isinstance(input, str):
+        # First try JSON parsing (handles double quotes)
+        try:
+            return json.loads(input)
+        except json.JSONDecodeError:
+            pass
+
+        # If JSON fails, try Python literal evaluation (handles single quotes)
+        try:
+            return ast.literal_eval(input)
+        except (ValueError, SyntaxError) as e:
+            print_error(f"Failed to parse deployment output as Python literal. Error: {e}")
+            pass
+
+    # Return the original result if it's not a string or can't be parsed
+    return input
