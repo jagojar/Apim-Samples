@@ -27,11 +27,11 @@ from apimtypes import APIM_SKU, HTTP_VERB, INFRASTRUCTURE
 
 
 # Define ANSI escape code constants for clarity in the print commands below
-RESET   = "\x1b[0m"
-BOLD_B  = "\x1b[1;34m"   # blue
-BOLD_R  = "\x1b[1;31m"   # red
-BOLD_G  = "\x1b[1;32m"   # green
-BOLD_Y  = "\x1b[1;33m"   # yellow
+BOLD_B = '\x1b[1;34m'   # blue
+BOLD_G = '\x1b[1;32m'   # green
+BOLD_R = '\x1b[1;31m'   # red
+BOLD_Y = '\x1b[1;33m'   # yellow
+RESET  = '\x1b[0m'
 
 CONSOLE_WIDTH = 175
 
@@ -95,14 +95,18 @@ class Output(object):
 
         # Check if the exact string is JSON. 
         if (is_string_json(text)):
-            self.json_data = json.loads(text)
+            try:
+                self.json_data = json.loads(text)
+            except json.JSONDecodeError as e:
+                self.jsonParseException = e
+                self.json_data = extract_json(text)
         else:
             # Check if a substring in the string is JSON.
             self.json_data = extract_json(text)
 
         self.is_json = self.json_data is not None
 
-    def get(self, key: str, label: str = '', secure: bool = False) -> str | None:
+    def get(self, key: str, label: str = '', secure: bool = False, suppress_logging: bool = False) -> str | None:
         """
         Retrieve a deployment output property by key, with optional label and secure masking.
 
@@ -117,7 +121,7 @@ class Output(object):
 
         try:
             if not isinstance(self.json_data, dict):
-                raise KeyError("json_data is not a dict")
+                raise KeyError('json_data is not a dict')
 
             if 'properties' in self.json_data:
                 properties = self.json_data.get('properties')
@@ -136,9 +140,9 @@ class Output(object):
             elif key in self.json_data:
                 deployment_output = self.json_data[key]['value']
 
-            if label:
+            if not suppress_logging and label:
                 if secure and isinstance(deployment_output, str) and len(deployment_output) >= 4:
-                    print_val(label, f"****{deployment_output[-4:]}")
+                    print_val(label, f'****{deployment_output[-4:]}')
                 else:
                     print_val(label, deployment_output)
 
@@ -153,7 +157,7 @@ class Output(object):
 
             return None
 
-    def getJson(self, key: str, label: str = '', secure: bool = False) -> Any:
+    def getJson(self, key: str, label: str = '', secure: bool = False, suppress_logging: bool = False) -> Any:
         """
         Retrieve a deployment output property by key and return it as a JSON object.
         This method is independent from get() and retrieves the raw deployment output value.
@@ -169,7 +173,7 @@ class Output(object):
 
         try:
             if not isinstance(self.json_data, dict):
-                raise KeyError("json_data is not a dict")
+                raise KeyError('json_data is not a dict')
 
             if 'properties' in self.json_data:
                 properties = self.json_data.get('properties')
@@ -188,9 +192,9 @@ class Output(object):
             elif key in self.json_data:
                 deployment_output = self.json_data[key]['value']
 
-            if label:
+            if not suppress_logging and label:
                 if secure and isinstance(deployment_output, str) and len(deployment_output) >= 4:
-                    print_val(label, f"****{deployment_output[-4:]}")
+                    print_val(label, f'****{deployment_output[-4:]}')
                 else:
                     print_val(label, deployment_output)
 
@@ -206,7 +210,7 @@ class Output(object):
                 try:
                     return ast.literal_eval(deployment_output)
                 except (ValueError, SyntaxError) as e:
-                    print_error(f"Failed to parse deployment output as Python literal. Error: {e}")
+                    print_error(f'Failed to parse deployment output as Python literal. Error: {e}')
                     pass
 
             # Return the original result if it's not a string or can't be parsed
@@ -221,16 +225,111 @@ class Output(object):
 
             return None
 
+class InfrastructureNotebookHelper:
+    """
+    Helper class for managing infrastructure notebooks.
+    Provides methods to execute infrastructure creation notebooks and handle outputs.
+    """
 
-class NotebookHelper:
-    def __init__(self, sample_folder: str, rg_name: str, rg_location: str, deployment: INFRASTRUCTURE, supported_infrastructures = list[INFRASTRUCTURE], use_jwt: bool = False):
+    # ------------------------------
+    #    CONSTRUCTOR
+    # ------------------------------
+
+    def __init__(self, rg_location: str, deployment: INFRASTRUCTURE, index: int, apim_sku: APIM_SKU):
         """
-        Initialize the NotebookHelper with a name and resource group.
+        Initialize the InfrastructureNotebookHelper.
+        
+        Args:
+            rg_location (str): Azure region for deployment.
+            deployment (INFRASTRUCTURE): Infrastructure type to deploy.
+            index (int): Index for multi-instance deployments.
+            apim_sku (APIM_SKU): SKU for API Management service.
+        """
+
+        self.rg_location = rg_location
+        self.deployment = deployment
+        self.index = index
+        self.apim_sku = apim_sku
+
+    # ------------------------------
+    #    PUBLIC METHODS
+    # ------------------------------
+
+    def create_infrastructure(self, bypass_infrastructure_check: bool = False) -> bool:
+        """
+        Create infrastructure by executing the appropriate creation script.
+        
+        Args:
+            bypass_infrastructure_check (bool): Skip infrastructure existence check. Defaults to False.
+            
+        Returns:
+            bool: True if infrastructure creation succeeded, False otherwise.
+        """
+
+        import sys 
+
+        if bypass_infrastructure_check or not does_infrastructure_exist(self.deployment, self.index):
+            # Map infrastructure types to their folder names
+            infra_folder_map = {
+                INFRASTRUCTURE.SIMPLE_APIM: 'simple-apim',
+                INFRASTRUCTURE.AFD_APIM_PE: 'afd-apim-pe', 
+                INFRASTRUCTURE.APIM_ACA: 'apim-aca'
+            }
+            
+            infra_folder = infra_folder_map.get(self.deployment)
+            if not infra_folder:
+                print(f'❌ Unsupported infrastructure type: {self.deployment.value}')
+                return False
+            
+            # Build the command to call the infrastructure creation script
+            cmd_args = [
+                sys.executable, 
+                os.path.join(find_project_root(), 'infrastructure', infra_folder, 'create_infrastructure.py'),
+                '--location', self.rg_location,
+                '--sku', str(self.apim_sku.value),
+                '--index', str(self.index)
+            ]
+
+            # Execute the infrastructure creation script with real-time output streaming and UTF-8 encoding to handle Unicode characters properly
+            process = subprocess.Popen(cmd_args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, text = True, 
+                                    bufsize = 1, universal_newlines = True, encoding = 'utf-8', errors = 'replace')
+
+            try:
+                # Stream output in real-time
+                for line in process.stdout:
+                    print(line.rstrip())
+            except Exception as e:
+                print(f'Error reading subprocess output: {e}')
+                
+            # Wait for process to complete
+            process.wait()
+
+            return process.returncode == 0
+
+        return True
+        
+class NotebookHelper:
+    """
+    Helper class for managing sample notebook deployments and infrastructure interaction.
+    """
+
+    # ------------------------------
+    #    CONSTRUCTOR
+    # ------------------------------
+
+    def __init__(self, sample_folder: str, rg_name: str, rg_location: str, deployment: INFRASTRUCTURE, supported_infrastructures = list[INFRASTRUCTURE], use_jwt: bool = False, index: int = 1, is_debug = False):
+        """
+        Initialize the NotebookHelper with sample configuration and infrastructure details.
         
         Args:
             sample_folder (str): The name of the sample folder.
             rg_name (str): The name of the resource group associated with the notebook.
             rg_location (str): The Azure region for deployment.
+            deployment (INFRASTRUCTURE): The infrastructure type to use.
+            supported_infrastructures (list[INFRASTRUCTURE]): List of supported infrastructure types.
+            use_jwt (bool): Whether to generate JWT tokens. Defaults to False.
+            index (int): Index for multi-instance deployments. Defaults to 1.
+            is_debug (bool): Whether to enable debug mode. Defaults to False.
         """
 
         self.sample_folder = sample_folder
@@ -239,42 +338,293 @@ class NotebookHelper:
         self.deployment = deployment
         self.supported_infrastructures = supported_infrastructures
         self.use_jwt = use_jwt
+        self.index = index
+        self.is_debug = is_debug
 
         validate_infrastructure(deployment, supported_infrastructures)
 
         if use_jwt:
             self._create_jwt()
 
+    # ------------------------------
+    #    PRIVATE METHODS
+    # ------------------------------
+
     def _create_jwt(self) -> None:
+        """Create JWT signing key and values for the sample."""
+
         # Set up the signing key for the JWT policy
         self.jwt_key_name = f'JwtSigningKey-{self.sample_folder}-{int(time.time())}'
         self.jwt_key_value, self.jwt_key_value_bytes_b64 = generate_signing_key()
         print_val('JWT key value', self.jwt_key_value)                    # this value is used to create the signed JWT token for requests to APIM
         print_val('JWT key value (base64)', self.jwt_key_value_bytes_b64) # this value is used in the APIM validate-jwt policy's issuer-signing-key attribute  
 
+    def _get_current_index(self) -> int | None:
+        """
+        Extract the index from the current resource group name.
+        
+        Returns:
+            int | None: The index if it exists, None otherwise.
+        """
+
+        prefix = f'apim-infra-{self.deployment.value}'
+        
+        if self.rg_name == prefix:
+            return None
+        elif self.rg_name.startswith(f'{prefix}-'):
+            try:
+                index_str = self.rg_name[len(f'{prefix}-'):]
+                return int(index_str)
+            except ValueError:
+                return None
+
+        return None
+
     def _clean_up_jwt(self, apim_name: str) -> None:
-        # 5) Clean up old JWT signing keys after successful deployment
+        """Clean up old JWT signing keys after successful deployment."""
+
+        # Clean up old JWT signing keys after successful deployment
         if not cleanup_old_jwt_signing_keys(apim_name, self.rg_name, self.jwt_key_name):
             print_warning('JWT key cleanup failed, but deployment was successful. Old keys may need manual cleanup.')
 
-    def deploy_bicep(self, bicep_parameters: dict) -> Output:
+    def _query_and_select_infrastructure(self) -> tuple[INFRASTRUCTURE | None, int | None]:
         """
-        Deploy a Bicep template for the sample.
+        Query for available infrastructures and allow user to select one or create new infrastructure.
+        
+        Returns:
+            tuple: (selected_infrastructure, selected_index) or (None, None) if no valid option
+        """
+        
+        # SJK: Querying the resource group location is inefficient at this time as it's done sequentially. 
+        # I'm leaving the code here, but may revisit it later.
+        QUERY_RG_LOCATION = False
+
+        print('Querying for available infrastructures...\n')
+        
+        # Get all resource groups that match the infrastructure pattern
+        available_options = []
+        
+        for infra in self.supported_infrastructures:
+            infra_options = self._find_infrastructure_instances(infra)
+            available_options.extend(infra_options)
+        
+        # Check if the desired infrastructure/index combination exists
+        desired_rg_name = get_infra_rg_name(self.deployment, self._get_current_index())
+        desired_exists = any(
+            get_infra_rg_name(infra, idx) == desired_rg_name 
+            for infra, idx in available_options
+        )
+        
+        if desired_exists:
+            # Scenario 1: Desired infrastructure exists, use it directly
+            print_success(f'Found desired infrastructure: {self.deployment.value} with resource group {desired_rg_name}')
+            return self.deployment, self._get_current_index()
+        
+        # Sort available options by infrastructure type, then by index
+        available_options.sort(key = lambda x: (x[0].value, x[1] if x[1] is not None else 0))
+        
+        # Prepare display options
+        display_options = []
+        option_counter = 1
+        
+        # Add existing infrastructure options
+        if available_options:
+            print_info(f'Found {len(available_options)} existing infrastructure(s). You can either create a new one or select an existing one.')
+            
+            # ALWAYS make "Create a NEW infrastructure" the first option for consistency
+            desired_index_str = self._get_current_index() if self._get_current_index() is not None else 'N/A'
+            desired_location = self.rg_location
+            
+            print(f'\n   Create a NEW infrastructure:\n')
+            # Column headers
+            if QUERY_RG_LOCATION:
+                print(f'     {'#':>3} {'Infrastructure':<20} {'Index':>8} {'Resource Group':<35} {'Location':<15}')
+                print(f'     {'-'*3:>3} {'-'*20:<20} {'-'*8:>8} {'-'*35:<35} {'-'*15:<15}')
+                print(f'     {option_counter:>3} {self.deployment.value:<20} {desired_index_str:>8} {desired_rg_name:<35} {desired_location:<15}')
+            else: 
+                print(f'     {'#':>3} {'Infrastructure':<20} {'Index':>8} {'Resource Group':<35}')
+                print(f'     {'-'*3:>3} {'-'*20:<20} {'-'*8:>8} {'-'*35:<35}')
+                print(f'     {option_counter:>3} {self.deployment.value:<20} {desired_index_str:>8} {desired_rg_name:<35}')
+
+            display_options.append(('create_new', self.deployment, self._get_current_index()))
+            option_counter += 1
+            
+            print(f'\n   Or select an EXISTING infrastructure:\n')
+            # Column headers
+            if QUERY_RG_LOCATION:
+                print(f'     {'#':>3} {'Infrastructure':<20} {'Index':>8} {'Resource Group':<35} {'Location':<15}')
+                print(f'     {'-'*3:>3} {'-'*20:<20} {'-'*8:>8} {'-'*35:<35} {'-'*15:<15}')
+            else:
+                print(f'     {'#':>3} {'Infrastructure':<20} {'Index':>8} {'Resource Group':<35}')
+                print(f'     {'-'*3:>3} {'-'*20:<20} {'-'*8:>8} {'-'*35:<35}')
+            
+            for infra, index in available_options:
+                index_str = index if index is not None else 'N/A'
+                rg_name = get_infra_rg_name(infra, index)
+                
+                if QUERY_RG_LOCATION:
+                    rg_location = get_resource_group_location(rg_name)
+                    print(f'     {option_counter:>3} {infra.value:<20} {index_str:>8} {rg_name:<35} {rg_location:<15}')
+                else:
+                    print(f'     {option_counter:>3} {infra.value:<20} {index_str:>8} {rg_name:<35}')
+
+                display_options.append(('existing', infra, index))
+                option_counter += 1
+        else:
+            print_warning('No existing supported infrastructures found.')
+            print_info(f'🚀 Automatically proceeding to create new infrastructure: {self.deployment.value}')
+            
+            # Automatically create the desired infrastructure without user confirmation
+            selected_index = self._get_current_index()
+            print_info(f'Creating new infrastructure: {self.deployment.value}{' (index: ' + str(selected_index) + ')' if selected_index is not None else ''}')
+            
+            # Execute the infrastructure creation
+            inb_helper = InfrastructureNotebookHelper(self.rg_location, self.deployment, selected_index, APIM_SKU.BASICV2)
+            success = inb_helper.create_infrastructure(True)  # Bypass infrastructure check to force creation
+
+            if success:
+                print_success(f'Successfully created infrastructure: {self.deployment.value}{' (index: ' + str(selected_index) + ')' if selected_index is not None else ''}')
+                return self.deployment, selected_index
+            else:
+                print_error('Failed to create infrastructure.')
+                return None, None
+        
+        print('')
+        
+        # Get user selection
+        while True:
+            try:
+                choice = input(f'Select infrastructure (1-{len(display_options)}) or press Enter to exit: ').strip()
+                
+                if not choice:
+                    print_warning('No infrastructure selected. Exiting.')
+                    return None, None
+                
+                choice_idx = int(choice) - 1
+                if 0 <= choice_idx < len(display_options):
+                    option_type, selected_infra, selected_index = display_options[choice_idx]
+                    
+                    if option_type == 'existing':
+                        print_success(f'Selected existing: {selected_infra.value}{' (index: ' + str(selected_index) + ')' if selected_index is not None else ''}')
+                        return selected_infra, selected_index
+                    elif option_type == 'create_new':
+                        print_info(f'Creating new infrastructure: {selected_infra.value}{' (index: ' + str(selected_index) + ')' if selected_index is not None else ''}')
+                        
+                        # Execute the infrastructure creation
+                        inb_helper = InfrastructureNotebookHelper(self.rg_location, self.deployment, selected_index, APIM_SKU.BASICV2)
+                        success = inb_helper.create_infrastructure(True)  # Bypass infrastructure check to force creation
+
+                        if success:
+                            print_success(f'Successfully created infrastructure: {selected_infra.value}{' (index: ' + str(selected_index) + ')' if selected_index is not None else ''}')
+                            return selected_infra, selected_index
+                        else:
+                            print_error('Failed to create infrastructure.')
+                            return None, None
+                else:
+                    print_error(f'Invalid choice. Please enter a number between 1 and {len(display_options)}.')
+                    
+            except ValueError:
+                print_error('Invalid input. Please enter a number.')
+            except KeyboardInterrupt:
+                print_warning('\nOperation cancelled by user.')
+                return None, None
+
+    def _find_infrastructure_instances(self, infrastructure: INFRASTRUCTURE) -> list[tuple[INFRASTRUCTURE, int | None]]:
+        """
+        Find all instances of a specific infrastructure type by querying Azure resource groups.
         
         Args:
-            bicep_parameters (dict): Parameters for the Bicep template.
+            infrastructure (INFRASTRUCTURE): The infrastructure type to search for.
             
         Returns:
-            Object: The deployment's output object
+            list: List of tuples (infrastructure, index) for found instances.
+        """
+        
+        instances = []
+        
+        # Query Azure for resource groups with the infrastructure tag
+        query_cmd = f'az group list --tag infrastructure={infrastructure.value} --query "[].name" -o tsv'
+        output = run(query_cmd, print_command_to_run = False, print_errors = False)
+        
+        if output.success and output.text.strip():
+            rg_names = [name.strip() for name in output.text.strip().split('\n') if name.strip()]
+            
+            for rg_name in rg_names:
+                # Parse the resource group name to extract the index
+                # Expected format: apim-infra-{infrastructure}-{index} or apim-infra-{infrastructure}
+                prefix = f'apim-infra-{infrastructure.value}'
+                
+                if rg_name == prefix:
+                    # No index
+                    instances.append((infrastructure, None))
+                elif rg_name.startswith(prefix + '-'):
+                    # Has index
+                    try:
+                        index_str = rg_name[len(prefix + '-'):]
+                        index = int(index_str)
+                        instances.append((infrastructure, index))
+                    except ValueError:
+                        # Invalid index format, skip
+                        continue
+        
+        return instances
+
+    # ------------------------------
+    #    PUBLIC METHODS
+    # ------------------------------
+
+    def deploy_sample(self, bicep_parameters: dict) -> Output:
+        """
+        Deploy a sample with infrastructure auto-detection and selection.
+        
+        Args:
+            bicep_parameters (dict): Parameters for the Bicep template deployment.
+            
+        Returns:
+            Output: The deployment result.
         """
 
-        # Infrastructure must be in place before samples can be layered on top
-        if not does_resource_group_exist(self.rg_name):
-            print_error(f'The specified infrastructure resource group and its resources must exist first. Please check that the user-defined parameters above are correctly referencing an existing infrastructure. If it does not yet exist, run the desired infrastructure in the /infra/ folder first.')
-            raise SystemExit(1)
+        # Check infrastructure availability and let user select or create
+        print(f'Checking desired infrastructure availability...\n')
+        print(f'   Infrastructure : {self.deployment.value}')
+        print(f'   Index          : {self.index}')
+        print(f'   Resource group : {self.rg_name}\n')
+
+        # Call the resource group existence check only once
+        rg_exists = does_resource_group_exist(self.rg_name)
+
+        # If the desired infrastructure doesn't exist, use the interactive selection process
+        if not rg_exists:
+            print_info('Desired infrastructure does not exist.\n')
+            
+            # Check if we've already done infrastructure selection (prevent double execution)
+            if 'infrastructure_selection_completed' not in globals():
+                # Use the NotebookHelper's infrastructure selection process
+                selected_deployment, selected_index = self._query_and_select_infrastructure()
+                
+                if selected_deployment is None:
+                    raise SystemExit(1)
+                
+                # Update the notebook helper with the selected infrastructure
+                self.deployment = selected_deployment
+                self.index = selected_index
+                self.rg_name = get_infra_rg_name(self.deployment, self.index)
+                
+                # Verify the updates were applied correctly
+                print(f'📝 Updated infrastructure variables')
+            else:
+                print('✅ Infrastructure selection already completed in this session')
+        else:
+            print('✅ Desired infrastructure already exists, proceeding with sample deployment')
+
+        # Deploy the sample APIs to the selected infrastructure
+        print(f'\nDeploying sample to:\n')
+        print(f'   Infrastructure : {self.deployment.value}')
+        print(f'   Index          : {self.index}')
+        print(f'   Resource group : {self.rg_name}\n')
 
         # Execute the deployment using the utility function that handles working directory management
-        output = create_bicep_deployment_group_for_sample(self.sample_folder, self.rg_name, self.rg_location, bicep_parameters)
+        output = create_bicep_deployment_group_for_sample(self.sample_folder, self.rg_name, self.rg_location, bicep_parameters, is_debug = self.is_debug)
 
         # Print a deployment summary, if successful; otherwise, exit with an error
         if output.success:
@@ -282,7 +632,7 @@ class NotebookHelper:
                 apim_name = output.get('apimServiceName')
                 self._clean_up_jwt(apim_name)
                     
-            print_success("Deployment succeeded", blank_above = True)
+            print_success('Deployment succeeded', blank_above = True)
         else:
             raise SystemExit('Deployment failed')
 
@@ -310,55 +660,58 @@ def _cleanup_resources(deployment_name: str, rg_name: str) -> None:
         Exception: If an error occurs during cleanup.
     """
     if not deployment_name:
-        print_error("Missing deployment name parameter.")
+        print_error('Missing deployment name parameter.')
         return
 
     if not rg_name:
-        print_error("Missing resource group name parameter.")
+        print_error('Missing resource group name parameter.')
         return
 
     try:
-        print_info(f"🧹 Cleaning up resource group '{rg_name}'...")
+        print_info(f'Resource group : {rg_name}')
 
         # Show the deployment details
-        output = run(f"az deployment group show --name {deployment_name} -g {rg_name} -o json", "Deployment retrieved", "Failed to retrieve the deployment")
+        output = run(f'az deployment group show --name {deployment_name} -g {rg_name} -o json', 'Deployment retrieved', 'Failed to retrieve the deployment', print_command_to_run = False)
 
         if output.success and output.json_data:
-            provisioning_state = output.json_data.get("properties").get("provisioningState")
-            print_info(f"Deployment provisioning state: {provisioning_state}")
+            # provisioning_state = output.json_data.get('properties').get('provisioningState')
+            # print_info(f'Deployment provisioning state: {provisioning_state}')
 
             # Delete and purge CognitiveService accounts
-            output = run(f" az cognitiveservices account list -g {rg_name}", f"Listed CognitiveService accounts", f"Failed to list CognitiveService accounts")
+            output = run(f' az cognitiveservices account list -g {rg_name}', f'Listed CognitiveService accounts', f'Failed to list CognitiveService accounts', print_command_to_run = False)
+
             if output.success and output.json_data:
                 for resource in output.json_data:
-                    print_info(f"Deleting and purging Cognitive Service Account '{resource['name']}' in resource group '{rg_name}'...")
-                    output = run(f"az cognitiveservices account delete -g {rg_name} -n {resource['name']}", f"Cognitive Services '{resource['name']}' deleted", f"Failed to delete Cognitive Services '{resource['name']}'")
-                    output = run(f"az cognitiveservices account purge -g {rg_name} -n {resource['name']} -l \"{resource['location']}\"", f"Cognitive Services '{resource['name']}' purged", f"Failed to purge Cognitive Services '{resource['name']}'")
+                    print_info(f"Deleting and purging Cognitive Service Account '{resource['name']}'...")
+                    output = run(f"az cognitiveservices account delete -g {rg_name} -n {resource['name']}", f"Cognitive Services '{resource['name']}' deleted", f"Failed to delete Cognitive Services '{resource['name']}'", print_command_to_run = False)
+                    output = run(f"az cognitiveservices account purge -g {rg_name} -n {resource['name']} --location \"{resource['location']}\"", f"Cognitive Services '{resource['name']}' purged", f"Failed to purge Cognitive Services '{resource['name']}'", print_command_to_run = False)
 
             # Delete and purge APIM resources
-            output = run(f" az apim list -g {rg_name}", f"Listed APIM resources", f"Failed to list APIM resources")
+            output = run(f' az apim list -g {rg_name}', f'Listed APIM resources', f'Failed to list APIM resources', print_command_to_run = False)
+
             if output.success and output.json_data:
                 for resource in output.json_data:
-                    print_info(f"Deleting and purging API Management '{resource['name']}' in resource group '{rg_name}'...")
-                    output = run(f"az apim delete -n {resource['name']} -g {rg_name} -y", f"API Management '{resource['name']}' deleted", f"Failed to delete API Management '{resource['name']}'")
-                    output = run(f"az apim deletedservice purge --service-name {resource['name']} --location \"{resource['location']}\"", f"API Management '{resource['name']}' purged", f"Failed to purge API Management '{resource['name']}'")
+                    print_info(f"Deleting and purging API Management '{resource['name']}'...")
+                    output = run(f"az apim delete -n {resource['name']} -g {rg_name} -y", f"API Management '{resource['name']}' deleted", f"Failed to delete API Management '{resource['name']}'", print_command_to_run = False)
+                    output = run(f"az apim deletedservice purge --service-name {resource['name']} --location \"{resource['location']}\"", f"API Management '{resource['name']}' purged", f"Failed to purge API Management '{resource['name']}'", print_command_to_run = False)
 
             # Delete and purge Key Vault resources
-            output = run(f" az keyvault list -g {rg_name}", f"Listed Key Vault resources", f"Failed to list Key Vault resources")
+            output = run(f' az keyvault list -g {rg_name}', f'Listed Key Vault resources', f'Failed to list Key Vault resources', print_command_to_run = False)
+            
             if output.success and output.json_data:
                 for resource in output.json_data:
-                    print_info(f"Deleting and purging Key Vault '{resource['name']}' in resource group '{rg_name}'...")
-                    output = run(f"az keyvault delete -n {resource['name']} -g {rg_name}", f"Key Vault '{resource['name']}' deleted", f"Failed to delete Key Vault '{resource['name']}'")
-                    output = run(f"az keyvault purge -n {resource['name']} --location \"{resource['location']}\"", f"Key Vault '{resource['name']}' purged", f"Failed to purge Key Vault '{resource['name']}'")
+                    print_info(f"Deleting and purging Key Vault '{resource['name']}'...")
+                    output = run(f"az keyvault delete -n {resource['name']} -g {rg_name}", f"Key Vault '{resource['name']}' deleted", f"Failed to delete Key Vault '{resource['name']}'", print_command_to_run = False)
+                    output = run(f"az keyvault purge -n {resource['name']} --location \"{resource['location']}\"", f"Key Vault '{resource['name']}' purged", f"Failed to purge Key Vault '{resource['name']}'", print_command_to_run = False)
 
             # Delete the resource group last
-            print_message(f"🧹 Deleting resource group '{rg_name}'...")
-            output = run(f"az group delete --name {rg_name} -y", f"Resource group '{rg_name}' deleted", f"Failed to delete resource group '{rg_name}'")
+            print_message(f"Deleting resource group '{rg_name}'...")
+            output = run(f'az group delete --name {rg_name} -y', f"Resource group '{rg_name}' deleted', f'Failed to delete resource group '{rg_name}'", print_command_to_run = False)
 
-            print_message("🧹 Cleanup completed.")
+            print_message('Cleanup completed.')
 
     except Exception as e:
-        print(f"An error occurred during cleanup: {e}")
+        print(f'An error occurred during cleanup: {e}')
         traceback.print_exc()
 
 def _print_log(message: str, prefix: str = '', color: str = '', output: str = '', duration: str = '', show_time: bool = False, blank_above: bool = False, blank_below: bool = False, wrap_lines: bool = False) -> None:
@@ -377,15 +730,15 @@ def _print_log(message: str, prefix: str = '', color: str = '', output: str = ''
         blank_below (bool, optional): Whether to print a blank line below.
         wrap_lines (bool, optional): Whether to wrap lines to fit console width.
     """
-    time_str    = f" ⌚ {datetime.datetime.now().time()}" if show_time else ""
-    output_str  = f" {output}" if output else ""
+    time_str    = f' ⌚ {datetime.datetime.now().time()}' if show_time else ''
+    output_str  = f' {output}' if output else ''
 
     if blank_above:
         print()
 
     # To preserve explicit newlines in the message (e.g., from print_val with val_below=True),
     # split the message on actual newlines and wrap each line separately, preserving blank lines and indentation.
-    full_message = f"{prefix}{color}{message}{RESET}{time_str} {duration}{output_str}"
+    full_message = f'{prefix}{color}{message}{RESET}{time_str} {duration}{output_str}'
     lines = full_message.splitlines(keepends = False)
 
     for line in lines:
@@ -493,12 +846,12 @@ def get_azure_role_guid(role_name: str) -> Optional[str]:
         return roles_data.get(role_name)
         
     except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
-        print_error(f"Failed to load Azure roles from {roles_file_path}: {str(e)}")
+        print_error(f'Failed to load Azure roles from {roles_file_path}: {str(e)}')
         
         return None
 
 
-def create_bicep_deployment_group(rg_name: str, rg_location: str, deployment: str | INFRASTRUCTURE, bicep_parameters: dict, bicep_parameters_file: str = 'params.json', rg_tags: dict | None = None) -> Output:
+def create_bicep_deployment_group(rg_name: str, rg_location: str, deployment: str | INFRASTRUCTURE, bicep_parameters: dict, bicep_parameters_file: str = 'params.json', rg_tags: dict | None = None, is_debug: bool = False) -> Output:
     """
     Create a Bicep deployment in a resource group, writing parameters to a file and running the deployment.
     Creates the resource group if it does not exist.
@@ -510,6 +863,7 @@ def create_bicep_deployment_group(rg_name: str, rg_location: str, deployment: st
         bicep_parameters: Parameters for the Bicep template.
         bicep_parameters_file (str, optional): File to write parameters to.
         rg_tags (dict, optional): Additional tags to apply to the resource group.
+        is_debug (bool, optional): Whether to enable debug mode. Defaults to False.
 
     Returns:
         Output: The result of the deployment command.
@@ -524,9 +878,9 @@ def create_bicep_deployment_group(rg_name: str, rg_location: str, deployment: st
         deployment_name = deployment
 
     bicep_parameters_format = {
-        "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-        "contentVersion": "1.0.0.0",
-        "parameters": bicep_parameters
+        '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#',
+        'contentVersion': '1.0.0.0',
+        'parameters': bicep_parameters
     }
 
     # Determine the correct deployment name and find the Bicep directory
@@ -547,14 +901,19 @@ def create_bicep_deployment_group(rg_name: str, rg_location: str, deployment: st
     with open(params_file_path, 'w') as file:
         file.write(json.dumps(bicep_parameters_format))
 
-    print(f"📝 Updated the policy XML in the bicep parameters file '{bicep_parameters_file}'")
+    print(f'📝 Updated the policy XML in the bicep parameters file {bicep_parameters_file}')
     
     # Verify that main.bicep exists in the infrastructure directory
     if not os.path.exists(main_bicep_path):
-        raise FileNotFoundError(f"main.bicep file not found in expected infrastructure directory: {bicep_dir}")
+        raise FileNotFoundError(f'main.bicep file not found in expected infrastructure directory: {bicep_dir}')
 
-    return run(f"az deployment group create --name {deployment_name} --resource-group {rg_name} --template-file \"{main_bicep_path}\" --parameters \"{params_file_path}\" --query \"properties.outputs\"",
-        f"Deployment '{deployment_name}' succeeded", f"Deployment '{deployment_name}' failed.")
+    cmd = f'az deployment group create --name {deployment_name} --resource-group {rg_name} --template-file "{main_bicep_path}" --parameters "{params_file_path}" --query "properties.outputs"'
+
+    if is_debug:
+        cmd += ' --debug'
+
+    print('\nDeploying bicep...\n')
+    return run(cmd, f"Deployment '{deployment_name}' succeeded", f"Deployment '{deployment_name}' failed.", print_command_to_run = False)
 
 
 # TODO: Reconcile this with apimtypes.py _get_project_root
@@ -581,10 +940,10 @@ def find_project_root() -> str:
         current_dir = os.path.dirname(current_dir)
     
     # If we can't find the project root, raise an error
-    raise FileNotFoundError("Could not determine project root directory")
+    raise FileNotFoundError('Could not determine project root directory')
 
 
-def create_bicep_deployment_group_for_sample(sample_name: str, rg_name: str, rg_location: str, bicep_parameters: dict, bicep_parameters_file: str = 'params.json', rg_tags: dict | None = None) -> Output:
+def create_bicep_deployment_group_for_sample(sample_name: str, rg_name: str, rg_location: str, bicep_parameters: dict, bicep_parameters_file: str = 'params.json', rg_tags: dict | None = None, is_debug: bool = False) -> Output:
     """
     Create a Bicep deployment for a sample, handling the working directory change automatically.
     This function ensures that the params.json file is written to the correct sample directory
@@ -597,6 +956,7 @@ def create_bicep_deployment_group_for_sample(sample_name: str, rg_name: str, rg_
         bicep_parameters: Parameters for the Bicep template.
         bicep_parameters_file (str, optional): File to write parameters to.
         rg_tags (dict, optional): Additional tags to apply to the resource group.
+        is_debug (bool, optional): Whether to enable debug mode. Defaults to False.
 
     Returns:
         Output: The result of the deployment command.
@@ -619,23 +979,23 @@ def create_bicep_deployment_group_for_sample(sample_name: str, rg_name: str, rg_
         
         # Verify the sample directory exists and has main.bicep
         if not os.path.exists(sample_dir):
-            raise FileNotFoundError(f"Sample directory not found: {sample_dir}")
+            raise FileNotFoundError(f'Sample directory not found: {sample_dir}')
         
         main_bicep_path = os.path.join(sample_dir, 'main.bicep')
         if not os.path.exists(main_bicep_path):
-            raise FileNotFoundError(f"main.bicep not found in sample directory: {sample_dir}")
+            raise FileNotFoundError(f'main.bicep not found in sample directory: {sample_dir}')
         
         # Change to the sample directory to ensure params.json is written there
         os.chdir(sample_dir)
-        print(f"📁 Changed working directory to: {sample_dir}")
+        print(f'📁 Changed working directory to: {sample_dir}')
         
         # Call the original deployment function
-        return create_bicep_deployment_group(rg_name, rg_location, sample_name, bicep_parameters, bicep_parameters_file, rg_tags)
+        return create_bicep_deployment_group(rg_name, rg_location, sample_name, bicep_parameters, bicep_parameters_file, rg_tags, is_debug)
         
     finally:
         # Always restore the original working directory
         os.chdir(original_cwd)
-        print(f"📁 Restored working directory to: {original_cwd}")
+        print(f'📁 Restored working directory to: {original_cwd}')
 
 
 def create_resource_group(rg_name: str, resource_group_location: str | None = None, tags: dict | None = None) -> None:
@@ -652,20 +1012,46 @@ def create_resource_group(rg_name: str, resource_group_location: str | None = No
     """
 
     if not does_resource_group_exist(rg_name):
-        print_info(f"Creating the resource group now...")
+        print_info(f'Creating the resource group now...')
 
         # Build the tags string for the Azure CLI command
-        tag_string = "source=apim-sample"
+        tag_string = 'source=apim-sample'
         if tags:
             for key, value in tags.items():
                 # Escape values that contain spaces or special characters
                 escaped_value = value.replace('"', '\\"') if isinstance(value, str) else str(value)
-                tag_string += f" {key}=\"{escaped_value}\""
+                tag_string += f' {key}=\"{escaped_value}\"'
 
-        run(f"az group create --name {rg_name} --location {resource_group_location} --tags {tag_string}",
+        run(f'az group create --name {rg_name} --location {resource_group_location} --tags {tag_string}',
             f"Resource group '{rg_name}' created",
             f"Failed to create the resource group '{rg_name}'", 
-            False, True, False, False)
+            False, False, False, False)
+
+def does_infrastructure_exist(infrastructure: INFRASTRUCTURE, index: int) -> bool:
+    """
+    Check if a specific infrastructure exists by querying the resource group.
+
+    Args:
+        infrastructure (INFRASTRUCTURE): The infrastructure type to check.
+        index (int): index for multi-instance infrastructures.
+
+    Returns:
+        bool: True if the infrastructure exists, False otherwise.
+    """
+    
+    print(f'🔍 Checking if infrastructure already exists...')
+
+    rg_name = get_infra_rg_name(infrastructure, index)
+
+    if does_resource_group_exist(rg_name):
+        print(f'✅ Infrastructure already exists!\n')
+        print('ℹ️  To redeploy, either:')
+        print('     1. Use a different index number, or')
+        print('     2. Delete the existing resource group first using the clean-up notebook')
+        return True
+    else:
+        print('   Infrastructure does not yet exist.')    
+        return False
 
 def does_resource_group_exist(rg_name: str) -> bool:
     """
@@ -678,8 +1064,22 @@ def does_resource_group_exist(rg_name: str) -> bool:
         bool: True if the resource group exists, False otherwise.
     """
 
-    output = run(f"az group show --name {rg_name}", print_output = False, print_errors = False)
+    output = run(f'az group show --name {rg_name}', print_command_to_run = False, print_output = False, print_errors = False)
     return output.success
+
+def get_resource_group_location(rg_name: str) -> str:
+    """
+    Get the location of a resource group.
+
+    Args:
+        rg_name (str): Name of the resource group.
+
+    Returns:
+        str: The location of the resource group, or 'Unknown' if not found.
+    """
+
+    output = run(f'az group show --name {rg_name} --query location -o tsv', print_command_to_run = False, print_output = False, print_errors = False)
+    return output.text.strip() if output.success and output.text.strip() else 'Unknown'
 
 def read_and_modify_policy_xml(policy_xml_filepath: str, replacements: dict[str, str], sample_name: str = None) -> str:
     """
@@ -693,7 +1093,7 @@ def read_and_modify_policy_xml(policy_xml_filepath: str, replacements: dict[str,
     """
 
     policy_xml_filepath = determine_policy_path(policy_xml_filepath, sample_name)
-    print(f"📄 Reading policy XML from  : {policy_xml_filepath}")
+    # print(f'📄 Reading policy XML from : {policy_xml_filepath}')  # debug
 
     # Read the specified policy XML file
     with open(policy_xml_filepath, 'r', encoding='utf-8') as policy_xml_file:
@@ -751,12 +1151,12 @@ def determine_policy_path(policy_xml_filepath_or_filename: str, sample_name: str
                     if samples_index + 1 < len(path_parts):
                         sample_name = path_parts[samples_index + 1]
                     else:
-                        raise ValueError("Could not detect sample name from path")
+                        raise ValueError('Could not detect sample name from path')
                 else:
-                    raise ValueError("Not running from within a samples directory")
+                    raise ValueError('Not running from within a samples directory')
                     
             except Exception as e:
-                raise ValueError(f"Could not auto-detect sample name. Please provide sample_name parameter explicitly. Error: {e}")
+                raise ValueError(f'Could not auto-detect sample name. Please provide sample_name parameter explicitly. Error: {e}')
         
         # Construct the full path
         from apimtypes import _get_project_root
@@ -793,7 +1193,7 @@ def read_policy_xml(policy_xml_filepath_or_filename: str, named_values: dict[str
     """
     
     policy_xml_filepath = determine_policy_path(policy_xml_filepath_or_filename, sample_name)
-    print(f"📄 Reading policy XML from  : {policy_xml_filepath}")
+    # print(f'📄 Reading policy XML from : {policy_xml_filepath}')  # debug
 
     # Read the specified policy XML file
     with open(policy_xml_filepath, 'r', encoding='utf-8') as policy_xml_file:
@@ -829,31 +1229,12 @@ def cleanup_infra_deployments(deployment: INFRASTRUCTURE, indexes: int | list[in
     else:
         indexes_list = [indexes]
 
+    i = 1
     for idx in indexes_list:
-        print_info(f"Cleaning up resources for {deployment} - {idx}", True)
+        print_info(f'{i}/{len(indexes_list)}: Cleaning up resources for {deployment} - {idx}', True)
         rg_name = get_infra_rg_name(deployment, idx)
         _cleanup_resources(deployment.value, rg_name)
-
-def cleanup_deployment(deployment: str, indexes: int | list[int] | None = None) -> None:
-    """
-    Clean up sample deployments by deployment name and index/indexes.
-    Obtains the resource group name for each index and calls the private cleanup method.
-
-    Args:
-        deployment (str): The deployment name (string).
-        indexes (int | list[int] | None): A single index, a list of indexes, or None for no index.
-    """
-    if not isinstance(deployment, str):
-        raise ValueError("deployment must be a string")
-    if indexes is None:
-        indexes_list = [None]
-    elif isinstance(indexes, (list, tuple)):
-        indexes_list = list(indexes)
-    else:
-        indexes_list = [indexes]
-    for idx in indexes_list:
-        rg_name = get_rg_name(deployment, idx)
-        _cleanup_resources(deployment, rg_name)
+        i += 1
 
 def extract_json(text: str) -> Any:
     """
@@ -875,7 +1256,12 @@ def extract_json(text: str) -> Any:
 
     # If the string is already valid JSON, parse and return it as a Python object.
     if is_string_json(text):
-        return json.loads(text)
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            # If JSON parsing fails despite is_string_json returning True, 
+            # fall through to substring search
+            pass
 
     decoder = json.JSONDecoder()
 
@@ -902,6 +1288,10 @@ def is_string_json(text: str) -> bool:
 
     # Accept only str, bytes, or bytearray as valid input for JSON parsing.
     if not isinstance(text, (str, bytes, bytearray)):
+        return False
+
+    # Skip empty or whitespace-only strings
+    if not text or not text.strip():
         return False
 
     # First try JSON parsing (handles double quotes)
@@ -931,16 +1321,16 @@ def get_account_info() -> Tuple[str, str, str]:
         Exception: If account information cannot be retrieved.
     """
 
-    output = run("az account show", "Retrieved az account", "Failed to get the current az account")
+    output = run('az account show', 'Retrieved az account', 'Failed to get the current az account')
 
     if output.success and output.json_data:
         current_user = output.json_data['user']['name']
         tenant_id = output.json_data['tenantId']
         subscription_id = output.json_data['id']
 
-        print_val("Current user", current_user)
-        print_val("Tenant ID", tenant_id)
-        print_val("Subscription ID", subscription_id)
+        print_val('Current user', current_user)
+        print_val('Tenant ID', tenant_id)
+        print_val('Subscription ID', subscription_id)
 
         return current_user, tenant_id, subscription_id
     else:
@@ -960,9 +1350,9 @@ def get_deployment_name() -> str:
     notebook_path = os.path.basename(os.getcwd())
 
     if not notebook_path:
-        raise RuntimeError("Notebook path could not be determined.")
+        raise RuntimeError('Notebook path could not be determined.')
     
-    print_val("Deployment name", notebook_path)
+    print_val('Deployment name', notebook_path)
 
     return notebook_path
 
@@ -981,25 +1371,25 @@ def get_frontdoor_url(deployment_name: INFRASTRUCTURE, rg_name: str) -> str | No
     afd_endpoint_url: str | None = None
 
     if deployment_name == INFRASTRUCTURE.AFD_APIM_PE:
-        output = run(f"az afd profile list -g {rg_name} -o json")
+        output = run(f'az afd profile list -g {rg_name} -o json')
 
         if output.success and output.json_data:
             afd_profile_name = output.json_data[0]['name']
-            print_ok(f"Front Door Profile Name: {afd_profile_name}", blank_above = False)
+            print_ok(f'Front Door Profile Name: {afd_profile_name}', blank_above = False)
 
             if afd_profile_name:
-                output = run(f"az afd endpoint list -g {rg_name} --profile-name {afd_profile_name} -o json")
+                output = run(f'az afd endpoint list -g {rg_name} --profile-name {afd_profile_name} -o json')
 
                 if output.success and output.json_data:
                     afd_hostname = output.json_data[0]['hostName']
 
                     if afd_hostname:
-                        afd_endpoint_url = f"https://{afd_hostname}"
+                        afd_endpoint_url = f'https://{afd_hostname}'
 
     if afd_endpoint_url:
-        print_ok(f"Front Door Endpoint URL: {afd_endpoint_url}", blank_above = False)
+        print_ok(f'Front Door Endpoint URL: {afd_endpoint_url}', blank_above = False)
     else:
-        print_warning("No Front Door endpoint URL found.")
+        print_warning('No Front Door endpoint URL found.')
 
     return afd_endpoint_url
 
@@ -1009,18 +1399,16 @@ def get_infra_rg_name(deployment_name: INFRASTRUCTURE, index: int | None = None)
 
     Args:
         deployment_name (INFRASTRUCTURE): The infrastructure deployment enum value.
-        index (int, optional): An optional index to append to the name.
+        index (int | None): An optional index to append to the name. Defaults to None.
 
     Returns:
         str: The generated resource group name.
     """
 
-    rg_name = f"apim-infra-{deployment_name.value}"
+    rg_name = f'apim-infra-{deployment_name.value}'
 
     if index is not None:
-        rg_name = f"{rg_name}-{str(index)}"
-
-    print_val("Resource group name", rg_name)
+        rg_name = f'{rg_name}-{index}'
 
     return rg_name
 
@@ -1036,12 +1424,12 @@ def get_rg_name(deployment_name: str, index: int | None = None) -> str:
         str: The generated resource group name.
     """
 
-    rg_name = f"apim-sample-{deployment_name}"
+    rg_name = f'apim-sample-{deployment_name}'
 
     if index is not None:
-        rg_name = f"{rg_name}-{str(index)}"
+        rg_name = f'{rg_name}-{str(index)}'
 
-    print_val("Resource group name", rg_name)
+    print_val('Resource group name', rg_name)
     return rg_name
 
 def run(command: str, ok_message: str = '', error_message: str = '', print_output: bool = False, print_command_to_run: bool = True, print_errors: bool = True, print_warnings: bool = True) -> Output:
@@ -1072,19 +1460,19 @@ def run(command: str, ok_message: str = '', error_message: str = '', print_outpu
     # Execute the command and capture the output
 
     try:
-        output_text = subprocess.check_output(command, shell = True, stderr = subprocess.STDOUT).decode("utf-8")
+        output_text = subprocess.check_output(command, shell = True, stderr = subprocess.STDOUT).decode('utf-8')
         success = True
     except Exception as e:
         # Handles both CalledProcessError and any custom/other exceptions (for test mocks)
-        output_text = getattr(e, 'output', b'').decode("utf-8") if hasattr(e, 'output') and isinstance(e.output, (bytes, bytearray)) else str(e)
+        output_text = getattr(e, 'output', b'').decode('utf-8') if hasattr(e, 'output') and isinstance(e.output, (bytes, bytearray)) else str(e)
         success = False
         
         if print_errors:
-            print_error(f"Command failed with error: {output_text}", duration = f"[{int((time.time() - start_time) // 60)}m:{int((time.time() - start_time) % 60)}s]")
+            print_error(f'Command failed with error: {output_text}', duration = f'[{int((time.time() - start_time) // 60)}m:{int((time.time() - start_time) % 60)}s]')
             traceback.print_exc()
 
     if print_output:
-        print(f"Command output:\n{output_text}")
+        print(f'Command output:\n{output_text}')
 
     minutes, seconds = divmod(time.time() - start_time, 60)
 
@@ -1106,7 +1494,7 @@ def run(command: str, ok_message: str = '', error_message: str = '', print_outpu
         print_message = print_ok if success else print_error
 
         if (ok_message or error_message):
-            print_message(ok_message if success else error_message, output_text if not success or print_output else "", f"[{int(minutes)}m:{int(seconds)}s]")
+            print_message(ok_message if success else error_message, output_text if not success or print_output else '', f'[{int(minutes)}m:{int(seconds)}s]')
 
     return Output(success, output_text)
 
@@ -1117,18 +1505,19 @@ validate_sku            = lambda val: APIM_SKU(val)
 
 def validate_infrastructure(infra: INFRASTRUCTURE, supported_infras: list[INFRASTRUCTURE]) -> None:
     """
-    Validate that the provided infrastructure is a supported infrastructure.
+    Validate that the provided infrastructure is supported.
 
     Args:
         infra (INFRASTRUCTURE): The infrastructure deployment enum value.
-        supported_infras (list[INFRASTRUCTURE]): List of supported infrastructures.
+        supported_infras (list[INFRASTRUCTURE]): List of supported infrastructure types.
 
     Raises:
         ValueError: If the infrastructure is not supported.
     """
 
     if infra not in supported_infras:
-        raise ValueError(f"Unsupported infrastructure: {infra}. Supported infrastructures are: {', '.join([i.value for i in supported_infras])}")
+        supported_names = ', '.join([i.value for i in supported_infras])
+        raise ValueError(f'Unsupported infrastructure: {infra}. Supported infrastructures are: {supported_names}')
     
 def generate_signing_key() -> tuple[str, str]:
     """
@@ -1177,28 +1566,28 @@ def check_apim_blob_permissions(apim_name: str, storage_account_name: str, resou
     blob_reader_role_id = get_azure_role_guid('StorageBlobDataReader')
     
     # Get APIM's managed identity principal ID
-    print_info("Getting APIM managed identity...")
+    print_info('Getting APIM managed identity...')
     apim_identity_output = run(
-        f"az apim show --name {apim_name} --resource-group {resource_group_name} --query identity.principalId -o tsv",
-        error_message="Failed to get APIM managed identity",
+        f'az apim show --name {apim_name} --resource-group {resource_group_name} --query identity.principalId -o tsv',
+        error_message='Failed to get APIM managed identity',
         print_command_to_run=True
     )
     
     if not apim_identity_output.success or not apim_identity_output.text.strip():
-        print_error("Could not retrieve APIM managed identity principal ID")
+        print_error('Could not retrieve APIM managed identity principal ID')
         return False
     
     principal_id = apim_identity_output.text.strip()
-    print_info(f"APIM managed identity principal ID: {principal_id}")    # Get storage account resource ID
+    print_info(f'APIM managed identity principal ID: {principal_id}')    # Get storage account resource ID
     # Remove suppression flags to get raw output, then extract resource ID with regex
     storage_account_output = run(
-        f"az storage account show --name {storage_account_name} --resource-group {resource_group_name} --query id -o tsv",
-        error_message="Failed to get storage account resource ID",
+        f'az storage account show --name {storage_account_name} --resource-group {resource_group_name} --query id -o tsv',
+        error_message='Failed to get storage account resource ID',
         print_command_to_run=True
     )
     
     if not storage_account_output.success:
-        print_error("Could not retrieve storage account resource ID")
+        print_error('Could not retrieve storage account resource ID')
         return False
     
     # Extract resource ID using regex pattern, ignoring any warning text
@@ -1206,7 +1595,7 @@ def check_apim_blob_permissions(apim_name: str, storage_account_name: str, resou
     match = re.search(resource_id_pattern, storage_account_output.text)
     
     if not match:
-        print_error("Could not parse storage account resource ID from output")
+        print_error('Could not parse storage account resource ID from output')
         return False
     
     storage_account_id = match.group(0)
@@ -1216,39 +1605,39 @@ def check_apim_blob_permissions(apim_name: str, storage_account_name: str, resou
     wait_interval = 30  # Check every 30 seconds
     elapsed_time = 0
     
-    print_info(f"Checking role assignment (will wait up to {max_wait_minutes} minute(s) for propagation)...")
+    print_info(f'Checking role assignment (will wait up to {max_wait_minutes} minute(s) for propagation)...')
     
     while elapsed_time < max_wait_seconds:
         # Check if role assignment exists
         role_assignment_output = run(
             f"az role assignment list --assignee {principal_id} --scope {storage_account_id} --role {blob_reader_role_id} --query '[0].id' -o tsv",
-            error_message="Failed to check role assignment",
+            error_message='Failed to check role assignment',
             print_command_to_run=True,
             print_errors=False
         )
         
         if role_assignment_output.success and role_assignment_output.text.strip():
-            print_success(f"Role assignment found! APIM managed identity has Storage Blob Data Reader permissions.")
+            print_success(f'Role assignment found! APIM managed identity has Storage Blob Data Reader permissions.')
             
             # Additional check: try to test blob access using the managed identity
-            print_info("Testing actual blob access...")
+            print_info('Testing actual blob access...')
             test_access_output = run(
                 f"az storage blob list --account-name {storage_account_name} --container-name samples --auth-mode login --only-show-errors --query '[0].name' -o tsv 2>/dev/null || echo 'access-test-failed'",
-                error_message="",
+                error_message='',
                 print_command_to_run=True,
                 print_errors=False
             )
             
-            if test_access_output.success and test_access_output.text.strip() != "access-test-failed":
-                print_success("Blob access test successful!")
+            if test_access_output.success and test_access_output.text.strip() != 'access-test-failed':
+                print_success('Blob access test successful!')
                 return True
             else:
-                print_warning("Role assignment exists but blob access test failed. Permissions may still be propagating...")
+                print_warning('Role assignment exists but blob access test failed. Permissions may still be propagating...')
         
         if elapsed_time == 0:
-            print_info(f"Role assignment not found yet. Waiting for Azure AD propagation...")
+            print_info(f'Role assignment not found yet. Waiting for Azure AD propagation...')
         else:
-            print_info(f"Still waiting... ({elapsed_time // 60}m {elapsed_time % 60}s elapsed)")
+            print_info(f'Still waiting... ({elapsed_time // 60}m {elapsed_time % 60}s elapsed)')
         
         if elapsed_time + wait_interval >= max_wait_seconds:
             break
@@ -1256,11 +1645,11 @@ def check_apim_blob_permissions(apim_name: str, storage_account_name: str, resou
         time.sleep(wait_interval)
         elapsed_time += wait_interval
     
-    print_error(f"Timeout: Role assignment not found after {max_wait_minutes} minutes.")
-    print_info("This is likely due to Azure AD propagation delays. You can:")
-    print_info("1. Wait a few more minutes and try again")
-    print_info("2. Manually verify the role assignment in the Azure portal")
-    print_info("3. Check the deployment logs for any errors")
+    print_error(f'Timeout: Role assignment not found after {max_wait_minutes} minutes.')
+    print_info('This is likely due to Azure AD propagation delays. You can:')
+    print_info('1. Wait a few more minutes and try again')
+    print_info('2. Manually verify the role assignment in the Azure portal')
+    print_info('3. Check the deployment logs for any errors')
     
     return False
 
@@ -1279,17 +1668,17 @@ def wait_for_apim_blob_permissions(apim_name: str, storage_account_name: str, re
         bool: True if permissions are available, False if timeout or error occurred.
     """
     
-    print_info("Azure role assignments can take several minutes to propagate across Azure AD. This check will verify that APIM can access the blob storage before proceeding with tests.\n")
+    print_info('Azure role assignments can take several minutes to propagate across Azure AD. This check will verify that APIM can access the blob storage before proceeding with tests.\n')
     
     success = check_apim_blob_permissions(apim_name, storage_account_name, resource_group_name, max_wait_minutes)
     
     if success:
-        print_success("Permission check passed! Ready to proceed with secure blob access tests.")
+        print_success('Permission check passed! Ready to proceed with secure blob access tests.')
     else:
-        print_error("Permission check failed. Please check the deployment and try again later.")
-        print_info("Tip: You can also run the verify-permissions.ps1 script to manually check role assignments.")
+        print_error('Permission check failed. Please check the deployment and try again later.')
+        print_info('Tip: You can also run the verify-permissions.ps1 script to manually check role assignments.')
     
-    print("")
+    print('')
 
     return success
 
@@ -1346,22 +1735,22 @@ def cleanup_old_jwt_signing_keys(apim_name: str, resource_group_name: str, curre
         
         output = run(
             f'az apim nv list --service-name "{apim_name}" --resource-group "{resource_group_name}" --query "[?contains(name, \'JwtSigningKey\')].name" -o tsv',
-            "Retrieved JWT signing keys",
-            "Failed to retrieve JWT signing keys"
+            'Retrieved JWT signing keys',
+            'Failed to retrieve JWT signing keys'
         )
         
         if not output.success:
-            print_error("Failed to retrieve JWT signing keys from APIM")
+            print_error('Failed to retrieve JWT signing keys from APIM')
             return False
             
         if not output.text.strip():
-            print_info("No JWT signing keys found. Nothing to clean up.")
+            print_info('No JWT signing keys found. Nothing to clean up.')
             return True
             
         # Parse the list of JWT keys
         jwt_keys = [key.strip() for key in output.text.strip().split('\n') if key.strip()]
         
-        # print_info(f"Found {len(jwt_keys)} total JWT signing keys.")
+        # print_info(f'Found {len(jwt_keys)} total JWT signing keys.')
         
         # Filter keys that belong to the same sample folder using regex
         sample_key_pattern = rf'^JwtSigningKey-{re.escape(sample_folder)}-\d+$'
@@ -1375,14 +1764,14 @@ def cleanup_old_jwt_signing_keys(apim_name: str, resource_group_name: str, curre
         
         for jwt_key in sample_folder_keys:
             if jwt_key == current_jwt_key_name:
-                print_info(f"Keeping current JWT key: {jwt_key}")
+                print_info(f'Keeping current JWT key: {jwt_key}')
                 kept_count += 1
             else:
-                print_info(f"Deleting old JWT key: {jwt_key}")
+                print_info(f'Deleting old JWT key: {jwt_key}')
                 delete_output = run(
                     f'az apim nv delete --service-name "{apim_name}" --resource-group "{resource_group_name}" --named-value-id "{jwt_key}" --yes',
-                    f"Deleted old JWT key: {jwt_key}",
-                    f"Failed to delete JWT key: {jwt_key}",
+                    f'Deleted old JWT key: {jwt_key}',
+                    f'Failed to delete JWT key: {jwt_key}',
                     print_errors = False
                 )
                 
@@ -1394,7 +1783,7 @@ def cleanup_old_jwt_signing_keys(apim_name: str, resource_group_name: str, curre
         return True
         
     except Exception as e:
-        print_error(f"Error during JWT key cleanup: {str(e)}")
+        print_error(f'Error during JWT key cleanup: {str(e)}')
         return False
     
 def get_json(input: str) -> Any:
@@ -1420,7 +1809,7 @@ def get_json(input: str) -> Any:
         try:
             return ast.literal_eval(input)
         except (ValueError, SyntaxError) as e:
-            print_error(f"Failed to parse deployment output as Python literal. Error: {e}")
+            print_error(f'Failed to parse deployment output as Python literal. Error: {e}')
             pass
 
     # Return the original result if it's not a string or can't be parsed
