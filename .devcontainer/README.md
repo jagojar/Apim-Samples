@@ -8,6 +8,7 @@ This directory contains the optimized dev container configuration for the Azure 
 - [Files in this Directory](#files-in-this-directory)
 - [Setup Stages](#setup-stages)
 - [Optimization Strategy](#optimization-strategy)
+- [Prebuild Configuration](#prebuild-configuration)
 - [Jupyter Kernel Configuration](#jupyter-kernel-configuration)
 - [Troubleshooting](#troubleshooting)
 - [Performance Notes](#performance-notes)
@@ -125,6 +126,127 @@ A few extensions like GitHub Copilot and Copilot Chat are still installed at con
 
 This pre-installation happens in the Dockerfile and significantly reduces container startup time as VS Code doesn't need to download and install these extensions.
 
+## 🏗️ Prebuild Configuration
+
+### What is Devcontainer Prebuild?
+
+**Devcontainer prebuild** is a GitHub Codespaces feature that pre-builds and caches container images with all dependencies and setup already completed. Instead of building the container from scratch every time someone opens a Codespace, GitHub builds and caches the container image ahead of time.
+
+### How Prebuild Works
+
+1. **Automatic Detection**: GitHub monitors changes to devcontainer configuration files (`.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile`, etc.)
+2. **Triggered Builds**: When changes are detected, GitHub automatically starts a prebuild process
+3. **Full Setup Execution**: Runs the complete container build including:
+   - Dockerfile instructions
+   - `onCreateCommand` (virtual environment creation, package installation)
+   - `updateContentCommand` (dependency updates, environment configuration)
+4. **Image Caching**: Stores the resulting container image in GitHub's registry
+5. **Fast Deployment**: When users open a Codespace, they get the pre-built image
+
+### Prebuild Benefits
+
+| Aspect | Without Prebuild | With Prebuild |
+|--------|------------------|---------------|
+| **Startup Time** | 5-10 minutes | 10-30 seconds |
+| **User Experience** | Watch installation progress | See verification only |
+| **Resource Usage** | Build every time | Build once, use many times |
+| **Consistency** | May vary due to network/timing | Identical pre-configured environment |
+| **Reliability** | Dependent on real-time installs | Pre-validated, cached environment |
+
+### Prebuild Lifecycle Commands in This Project
+
+Our devcontainer uses two key lifecycle commands optimized for prebuild:
+
+#### `onCreateCommand` (Container Creation)
+```bash
+# Creates Python virtual environment and registers Jupyter kernel
+echo '🚀 Creating Python virtual environment in workspace...' && 
+/usr/local/bin/python3.12 -m venv /workspaces/Apim-Samples/.venv --copies && 
+source /workspaces/Apim-Samples/.venv/bin/activate && 
+pip install --upgrade pip setuptools wheel ipykernel && 
+python -m ipykernel install --user --name=apim-samples --display-name='APIM Samples Python 3.12'
+```
+
+#### `updateContentCommand` (Content Updates)
+```bash
+# Installs Python packages and configures environment
+source /workspaces/Apim-Samples/.venv/bin/activate && 
+pip install -r requirements.txt && 
+pip install pytest pytest-cov coverage && 
+python setup/setup_python_path.py --generate-env && 
+az config set core.login_experience_v2=off && 
+az extension add --name containerapp --only-show-errors && 
+az extension add --name front-door --only-show-errors
+```
+
+### When Prebuild is Triggered
+
+Prebuild automatically occurs when you push changes to:
+- `.devcontainer/devcontainer.json`
+- `.devcontainer/Dockerfile`
+- `requirements.txt` (when referenced in `updateContentCommand`)
+- Any other files referenced in lifecycle commands
+
+### Monitoring Prebuild Status
+
+You can monitor prebuild status in several ways:
+
+1. **GitHub Repository**:
+   - Go to your repository on GitHub
+   - Navigate to the "Code" tab
+   - Look for the "Codespaces" section
+   - Click on "View all" to see prebuild status
+
+2. **Codespaces Settings**:
+   - Visit [github.com/codespaces](https://github.com/codespaces)
+   - Check the "Repository prebuilds" section
+   - View build logs and status
+
+3. **Build Indicators**:
+   - ✅ Green checkmark: Prebuild successful
+   - ❌ Red X: Prebuild failed
+   - 🟡 Yellow circle: Prebuild in progress
+   - ⚪ Gray circle: No recent prebuild
+
+### Refreshing Prebuilt Containers
+
+To refresh the prebuilt container (recommended periodically):
+
+#### Method 1: Trigger via Configuration Change
+1. Make a small change to `.devcontainer/devcontainer.json` (e.g., add a comment)
+2. Commit and push the change
+3. GitHub will automatically trigger a new prebuild
+
+#### Method 2: Manual Trigger (if available)
+1. Go to your repository's Codespaces settings
+2. Find the prebuild configuration
+3. Click "Trigger prebuild" if the option is available
+
+#### Method 3: Update Dependencies
+1. Update `requirements.txt` with newer package versions
+2. Commit and push the changes
+3. Prebuild will automatically run with updated dependencies
+
+### Best Practices for Prebuild
+
+1. **Keep Commands Idempotent**: Ensure commands can run multiple times safely
+2. **Use Caching**: Leverage Docker layer caching and package managers' cache
+3. **Minimize Build Time**: Move heavy operations to prebuild, keep runtime light
+4. **Test Changes**: Verify prebuild success before merging configuration changes
+5. **Monitor Logs**: Check prebuild logs for warnings or potential optimizations
+6. **Regular Refresh**: Refresh prebuilds monthly or when dependencies change significantly
+
+### Prebuild vs Runtime Separation
+
+| Operation | Prebuild Stage | Runtime Stage |
+|-----------|----------------|---------------|
+| Python packages | ✅ Install all | ❌ Verify only |
+| Virtual environment | ✅ Create and configure | ❌ Activate only |
+| Azure CLI extensions | ✅ Install | ❌ Verify only |
+| Jupyter kernel | ✅ Register | ❌ Validate only |
+| Environment files | ✅ Generate | ❌ Check existence |
+| VS Code extensions | ✅ Install | ❌ Load only |
+
 ## 🔧 Jupyter Kernel Configuration
 
 The dev container is configured with a custom Jupyter kernel for optimal Python development experience:
@@ -230,6 +352,25 @@ The post-start script provides real-time feedback:
 2. **Wait for Completion**: Let the verification finish before starting work
 3. **Check Status Messages**: Review any warnings or errors reported
 4. **Use Fallback Commands**: If something fails, the script provides guidance
+5. **Refresh Prebuilds Regularly**: Update prebuilt containers monthly or when major dependency changes occur
+
+### Prebuild Refresh Recommendations
+
+**When to refresh prebuilds**:
+- Monthly maintenance (keep dependencies current)
+- After major Python package updates
+- When Azure CLI or extensions have significant updates
+- If startup performance degrades over time
+- Before important development cycles or team onboarding
+
+**Quick refresh method**:
+```bash
+# Add a comment to trigger prebuild
+# Edit .devcontainer/devcontainer.json and add/update a comment, then:
+git add .devcontainer/devcontainer.json
+git commit -m "Trigger prebuild refresh"
+git push
+```
 
 ---
 
