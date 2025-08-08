@@ -266,58 +266,94 @@ class InfrastructureNotebookHelper:
     #    PUBLIC METHODS
     # ------------------------------
 
-    def create_infrastructure(self, bypass_infrastructure_check: bool = False) -> bool:
+    def create_infrastructure(self, bypass_infrastructure_check: bool = False, allow_update: bool = True) -> None:
         """
         Create infrastructure by executing the appropriate creation script.
         
         Args:
             bypass_infrastructure_check (bool): Skip infrastructure existence check. Defaults to False.
+            allow_update (bool): Allow infrastructure updates when infrastructure already exists. Defaults to True.
             
         Returns:
-            bool: True if infrastructure creation succeeded, False otherwise.
+            None: Method either succeeds or exits the program with SystemExit.
         """
 
-        import sys 
+        try:
+            import sys 
 
-        if bypass_infrastructure_check or not does_infrastructure_exist(self.deployment, self.index):
-            # Map infrastructure types to their folder names
-            infra_folder_map = {
-                INFRASTRUCTURE.SIMPLE_APIM: 'simple-apim',
-                INFRASTRUCTURE.AFD_APIM_PE: 'afd-apim-pe', 
-                INFRASTRUCTURE.APIM_ACA: 'apim-aca'
-            }
+            # For infrastructure notebooks, check if update is allowed and handle user choice
+            if allow_update:
+                rg_name = get_infra_rg_name(self.deployment, self.index)
+                if does_resource_group_exist(rg_name):
+                    # Infrastructure exists, show update dialog
+                    try:
+                        should_proceed, new_index = _prompt_for_infrastructure_update(rg_name)
+                        if new_index is not None:
+                            # User selected option 2: Use a different index
+                            print(f'🔄 Retrying infrastructure creation with index {new_index}...')
+                            self.index = new_index
+                            # Recursively call create_infrastructure with the new index
+                            return self.create_infrastructure(bypass_infrastructure_check, allow_update)
+                        elif not should_proceed:
+                            print('❌ Infrastructure deployment cancelled by user.')
+                            raise SystemExit("User cancelled deployment")
+                    except (KeyboardInterrupt, EOFError):
+                        print('\n❌ Infrastructure deployment cancelled by user (Escape/Ctrl+C pressed).')
+                        raise SystemExit("User cancelled deployment")
             
-            infra_folder = infra_folder_map.get(self.deployment)
-            if not infra_folder:
-                print(f'❌ Unsupported infrastructure type: {self.deployment.value}')
-                return False
+            # Check infrastructure existence for the normal flow
+            infrastructure_exists = does_resource_group_exist(get_infra_rg_name(self.deployment, self.index)) if not allow_update else False
             
-            # Build the command to call the infrastructure creation script
-            cmd_args = [
-                sys.executable, 
-                os.path.join(find_project_root(), 'infrastructure', infra_folder, 'create_infrastructure.py'),
-                '--location', self.rg_location,
-                '--index', str(self.index),
-                '--sku', str(self.apim_sku.value)
-            ]
-
-            # Execute the infrastructure creation script with real-time output streaming and UTF-8 encoding to handle Unicode characters properly
-            process = subprocess.Popen(cmd_args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, text = True, 
-                                    bufsize = 1, universal_newlines = True, encoding = 'utf-8', errors = 'replace')
-
-            try:
-                # Stream output in real-time
-                for line in process.stdout:
-                    print(line.rstrip())
-            except Exception as e:
-                print(f'Error reading subprocess output: {e}')
+            if bypass_infrastructure_check or not infrastructure_exists:
+                # Map infrastructure types to their folder names
+                infra_folder_map = {
+                    INFRASTRUCTURE.SIMPLE_APIM: 'simple-apim',
+                    INFRASTRUCTURE.AFD_APIM_PE: 'afd-apim-pe', 
+                    INFRASTRUCTURE.APIM_ACA: 'apim-aca'
+                }
                 
-            # Wait for process to complete
-            process.wait()
+                infra_folder = infra_folder_map.get(self.deployment)
+                if not infra_folder:
+                    print(f'❌ Unsupported infrastructure type: {self.deployment.value}')
+                    raise SystemExit(1)
+                
+                # Build the command to call the infrastructure creation script
+                cmd_args = [
+                    sys.executable, 
+                    os.path.join(find_project_root(), 'infrastructure', infra_folder, 'create_infrastructure.py'),
+                    '--location', self.rg_location,
+                    '--index', str(self.index),
+                    '--sku', str(self.apim_sku.value)
+                ]
 
-            return process.returncode == 0
+                # Execute the infrastructure creation script with real-time output streaming and UTF-8 encoding to handle Unicode characters properly
+                process = subprocess.Popen(cmd_args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, text = True, 
+                                        bufsize = 1, universal_newlines = True, encoding = 'utf-8', errors = 'replace')
 
-        return True
+                try:
+                    # Stream output in real-time
+                    for line in process.stdout:
+                        print(line.rstrip())
+                except Exception as e:
+                    print(f'Error reading subprocess output: {e}')
+                    
+                # Wait for process to complete
+                process.wait()
+
+                if process.returncode != 0:
+                    print("❌ Infrastructure creation failed!")
+                    raise SystemExit(1)
+
+                return True
+
+            return True
+            
+        except KeyboardInterrupt:
+            print("\n🚫 Infrastructure deployment cancelled by user.")
+            raise SystemExit("User cancelled deployment")
+        except Exception as e:
+            print(f"❌ Infrastructure deployment failed with error: {e}")
+            raise SystemExit(1)
         
 class NotebookHelper:
     """
@@ -506,7 +542,7 @@ class NotebookHelper:
         # Get user selection
         while True:
             try:
-                choice = input(f'Select infrastructure (1-{len(display_options)}) or press Enter to exit: ').strip()
+                choice = input(f'Select infrastructure (1-{len(display_options)}): ').strip()
                 
                 if not choice:
                     print_warning('No infrastructure selected. Exiting.')
@@ -537,9 +573,7 @@ class NotebookHelper:
                     
             except ValueError:
                 print_error('Invalid input. Please enter a number.')
-            except KeyboardInterrupt:
-                print_warning('\nOperation cancelled by user.')
-                return None, None
+
 
     def _find_infrastructure_instances(self, infrastructure: INFRASTRUCTURE) -> list[tuple[INFRASTRUCTURE, int | None]]:
         """
@@ -1038,27 +1072,107 @@ def create_resource_group(rg_name: str, resource_group_location: str | None = No
             f"Failed to create the resource group '{rg_name}'", 
             False, False, False, False)
 
-def does_infrastructure_exist(infrastructure: INFRASTRUCTURE, index: int) -> bool:
+def _prompt_for_infrastructure_update(rg_name: str) -> tuple[bool, int | None]:
+    """
+    Prompt the user for infrastructure update confirmation.
+    
+    Args:
+        rg_name (str): The resource group name.
+        
+    Returns:
+        tuple: (proceed_with_update, new_index) where:
+            - proceed_with_update: True if user wants to proceed with update, False to cancel
+            - new_index: None if no index change, integer if user selected option 2
+    """
+    print(f'✅ Infrastructure already exists: {rg_name}\n')
+    print('🔄 Infrastructure Update Options:\n')
+    print('   This infrastructure notebook can update the existing infrastructure.')
+    print('   Updates are additive and will:')
+    print('   • Add new APIs and policy fragments defined in the infrastructure')
+    print('   • Update existing infrastructure components to match the template')
+    print('   • Preserve manually added samples and configurations\n')
+    
+    print('ℹ️  Choose an option:')
+    print('     1. Update the existing infrastructure (recommended)')
+    print('     2. Use a different index')
+    print('     3. Delete the existing resource group first using the clean-up notebook\n')
+    
+    while True:
+        choice = input('\nEnter your choice (1, 2, or 3): ').strip()
+        
+        # Default to option 1 if user just presses Enter
+        if choice == '1' or not choice:
+            return True, None
+        elif choice == '2':
+            # Option 2: Prompt for a different index
+            while True:
+                try:
+                    new_index_str = input('\nEnter the desired index for the infrastructure: ').strip()
+                    if not new_index_str:
+                        print('❌ Please enter a valid index number.')
+                        continue
+                    
+                    new_index = int(new_index_str)
+                    if new_index <= 0:
+                        print('❌ Index must be a positive integer.')
+                        continue
+                    
+                    return False, new_index
+                except ValueError:
+                    print('❌ Please enter a valid integer for the index.')
+        elif choice == '3':
+            return False, None
+        else:
+            print('❌ Invalid choice. Please enter 1, 2, or 3.')
+
+def does_infrastructure_exist(infrastructure: INFRASTRUCTURE, index: int, allow_update_option: bool = False) -> bool:
     """
     Check if a specific infrastructure exists by querying the resource group.
 
     Args:
         infrastructure (INFRASTRUCTURE): The infrastructure type to check.
         index (int): index for multi-instance infrastructures.
+        allow_update_option (bool): If True, provides option to proceed with infrastructure update when infrastructure exists.
 
     Returns:
-        bool: True if the infrastructure exists, False otherwise.
+        bool: True if the infrastructure exists and no update is desired, False if infrastructure doesn't exist or update is confirmed.
     """
     
-    print(f'🔍 Checking if infrastructure already exists...')
+    print(f'� Debug: does_infrastructure_exist called with allow_update_option={allow_update_option}')
+    print(f'�🔍 Checking if infrastructure already exists...')
 
     rg_name = get_infra_rg_name(infrastructure, index)
 
     if does_resource_group_exist(rg_name):
-        print(f'✅ Infrastructure already exists!\n')
-        print('ℹ️  To redeploy, either:')
-        print('     1. Use a different index number, or')
-        print('     2. Delete the existing resource group first using the clean-up notebook')
+        print(f'✅ Infrastructure already exists: {rg_name}\n')
+        
+        if allow_update_option:
+            print('🔄 Infrastructure Update Options:\n')
+            print('   This infrastructure notebook can update the existing infrastructure. Updates are additive and will:\n')
+            print('   • Add new APIs and policy fragments defined in the infrastructure')
+            print('   • Update existing infrastructure components to match the template')
+            print('   • Preserve manually added samples and configurations\n')
+            
+            print('ℹ️  Choose an option:\n')
+            print('     1. Update the existing infrastructure (recommended and not destructive if samples already exist)')
+            print('     2. Use a different index')
+            print('     3. Exit, then delete the existing resource group separately via the clean-up notebook\n')
+            
+            while True:
+                choice = input('\nEnter your choice (1, 2, or 3): ').strip()
+                
+                # Default to option 1 if user just presses Enter
+                if choice == '1':
+                    return False  # Allow deployment to proceed
+                elif not choice or choice in('2', '3'):
+                    return True  # Block deployment
+                else:
+                    print('❌ Invalid choice. Please enter 1, 2, or 3.')
+        else:
+            print('ℹ️  To redeploy, either:')
+            print('     1. Use a different index, or')
+            print('     2. Exit, then delete the existing resource group separately via the clean-up notebook\n')
+            
         return True
     else:
         print('   Infrastructure does not yet exist.')    
@@ -1411,7 +1525,6 @@ def cleanup_infra_deployments(deployment: INFRASTRUCTURE, indexes: int | list[in
                     print_error(f"❌ Exception during cleanup for {deployment.value}-{task['index']}: {str(e)}")
 
     # Final summary
-    print()
     if failed_count == 0:
         print_ok(f'All {len(indexes_list)} infrastructure cleanups completed successfully!')
     else:
